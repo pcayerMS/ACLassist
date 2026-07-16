@@ -52,8 +52,7 @@ if ($dataDir -and -not (Test-Path $dataDir)) { New-Item -ItemType Directory -Pat
 
 $conn = Connect-ScanTarget -Config $cfg
 
-$acl = Invoke-AclScan -StorageContext $conn.StorageContext -FileSystem $cfg.target.fileSystem `
-    -RootPath $cfg.target.rootPath -Config $cfg -AceJsonlPath $jsonlPath
+$acl = Invoke-AclScan -Config $cfg -AceJsonlPath $jsonlPath
 
 $graph = Invoke-GraphScan -Config $cfg -PrincipalRefs $acl.PrincipalRefs
 

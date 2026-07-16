@@ -21,9 +21,9 @@
         'Get-MgContext',
         # Storage client context (creates an in-memory object only)
         'New-AzStorageContext',
-        # ADLS Gen2 read
-        'Get-AzDataLakeGen2Item',
-        'Get-AzDataLakeGen2ChildItem',
+        # ADLS Gen2 data-plane reads use the DFS REST API (GET List Paths, HEAD getAccessControl)
+        # with a token from Get-AzAccessToken, or a read+list SAS. See ReadOnlyRest below.
+        'Get-AzAccessToken',
         # Azure RBAC read
         'Get-AzRoleAssignment',
         # Microsoft Graph read
@@ -50,8 +50,15 @@
         'Clear', 'Disable', 'Enable', 'Grant', 'Revoke', 'Deny', 'Restore', 'Invoke'
     )
 
+    # Read-only DFS REST calls used for the ADLS data plane (never PUT/PATCH/POST/DELETE).
+    ReadOnlyRest = @(
+        'GET  https://<account>.dfs.core.windows.net/<filesystem>?resource=filesystem&recursive=true  (List Paths)',
+        'HEAD https://<account>.dfs.core.windows.net/<filesystem>/<path>?action=getAccessControl       (read ACL)'
+    )
+
     Notes = @(
         'AllowedCmdlets is authoritative; ForbiddenVerbs is a guard for Az.*/Mg* commands only.',
+        'ADLS data-plane reads use Invoke-WebRequest with GET/HEAD only (see ReadOnlyRest) - no mutating verbs.',
         'The exceptions in ClientSideContextCmdlets create/select in-memory objects and change nothing remotely.',
         'Writing local artifacts (e.g. data/inventory.json) is not an Azure/Entra mutation and is allowed.',
         'There is no remediation/apply code in Phase 1.'

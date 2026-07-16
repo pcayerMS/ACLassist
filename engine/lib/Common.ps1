@@ -14,6 +14,29 @@ function Write-ScanLog {
     Write-Host ("[{0}] {1,-5} {2}" -f (Get-Date -Format 'HH:mm:ss'), $Level, $Message) -ForegroundColor $color
 }
 
+function Write-DataPlaneAccessHint {
+    <# Prints actionable guidance when an ADLS data-plane call is denied (HTTP 403). #>
+    param($Config)
+    $acct = $Config.target.storageAccountName
+    Write-ScanLog ERROR 'ADLS data-plane request was denied (HTTP 403).'
+    Write-Host @"
+  Check, in order:
+
+  1) IDENTITY / RBAC - the signed-in identity needs a data-plane role:
+       * 'Storage Blob Data Reader' to list, and 'Storage Blob Data Owner' to read ACLs (getAccessControl).
+       Verify: Get-AzRoleAssignment -Scope <storage-account-resource-id>
+     (A pure RBAC failure returns error code 'AuthorizationPermissionMismatch'.)
+
+  2) NETWORK - if the account is private-endpoint-only (public access Disabled), run where the storage
+     FQDN resolves to the private endpoint. Error code 'AuthorizationFailure' points here.
+       [System.Net.Dns]::GetHostAddresses('$acct.dfs.core.windows.net')    # expect the PE private IP
+       [System.Net.Dns]::GetHostAddresses('$acct.blob.core.windows.net')   # ADLS Gen2 may also need a BLOB PE
+     ADLS Gen2 commonly needs BOTH 'dfs' and 'blob' private endpoints + matching private DNS zones.
+
+  3) SAS - if auth.mode='sas', ensure the token has read + list and has not expired.
+"@ -ForegroundColor Yellow
+}
+
 function Get-ScanConfig {
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Path)
@@ -68,6 +91,41 @@ function ConvertTo-SymbolicPermission {
     $w = ($s -match 'Write')   ? 'w' : '-'
     $x = ($s -match 'Execute') ? 'x' : '-'
     return "$r$w$x"
+}
+
+function Get-HeaderValue {
+    <# Case-insensitive fetch of a single response header value from Invoke-WebRequest. #>
+    param($Response, [Parameter(Mandatory)][string]$Name)
+    if (-not $Response -or -not $Response.Headers) { return $null }
+    foreach ($k in $Response.Headers.Keys) {
+        if ($k -ieq $Name) {
+            $v = $Response.Headers[$k]
+            if ($v -is [array]) { return ($v -join ',') }
+            return "$v"
+        }
+    }
+    return $null
+}
+
+function ConvertFrom-XmsAcl {
+    <# Parses an x-ms-acl header (e.g. 'user::rwx,group:oid:r-x,default:user::rwx') into ACE records. #>
+    param([string]$Acl)
+    $out = [System.Collections.Generic.List[object]]::new()
+    if (-not $Acl) { return $out }
+    foreach ($entry in ($Acl -split ',')) {
+        if (-not $entry) { continue }
+        $parts = $entry -split ':'
+        $isDefault = $false
+        if ($parts.Count -ge 1 -and $parts[0] -eq 'default') { $isDefault = $true; $parts = @($parts[1..($parts.Count - 1)]) }
+        if ($parts.Count -ne 3) { continue }
+        $out.Add([pscustomobject]@{
+                scope       = if ($isDefault) { 'default' } else { 'access' }
+                type        = $parts[0].ToLower()
+                principalId = $parts[1]
+                permissions = $parts[2]
+            })
+    }
+    return $out
 }
 
 function Get-PathFacets {

@@ -21,13 +21,15 @@ no remediation.
 | Sign in (Azure) | `Connect-AzAccount`, `Get-AzContext`, `Set-AzContext` | No — client context only |
 | Sign in (Graph) | `Connect-MgGraph`, `Get-MgContext` | No |
 | Build storage context | `New-AzStorageContext` | No — client object only |
-| Enumerate folders + ACLs | `Get-AzDataLakeGen2Item`, `Get-AzDataLakeGen2ChildItem` | No — read |
+| Acquire data-plane token | `Get-AzAccessToken` | No — token only |
+| Enumerate folders + ACLs | DFS REST `GET …?resource=filesystem` (List Paths) + `HEAD …?action=getAccessControl` | No — read (GET/HEAD) |
 | Capture existing RBAC | `Get-AzRoleAssignment` | No — read |
 | Enumerate groups + members | `Get-MgGroup`, `Get-MgGroupMember`, `Get-MgGroupTransitiveMember` | No — read |
 | Enumerate users | `Get-MgUser` | No — read |
 
 ## Verify it yourself
 Search the `engine/` scripts: there are **no** `New-`/`Set-`/`Update-`/`Remove-`/`Add-`/`Move-`
-operations against Azure resources, ADLS data, or directory objects. (`New-AzStorageContext` and
-`Set-AzContext` create/select **client‑side context objects only** and change nothing remotely; local
-file writes such as writing `data/inventory.json` are not Azure/Entra mutations.)
+operations against Azure resources, ADLS data, or directory objects, and the only ADLS REST calls are
+**`GET`** (List Paths) and **`HEAD`** (getAccessControl) — never `PUT`/`PATCH`/`POST`/`DELETE`.
+(`New-AzStorageContext` and `Set-AzContext` create/select **client‑side context objects only** and
+change nothing remotely; local file writes such as `data/inventory.json` are not Azure/Entra mutations.)
