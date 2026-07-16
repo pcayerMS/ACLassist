@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://air-canada/acl-reporting/config.schema.json",
+  "title": "ACL assessment configuration",
+  "description": "Target + authentication configuration for the READ-ONLY ADLS ACL assessment engine.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["target", "auth"],
+  "properties": {
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tenantId", "subscriptionId", "storageAccountName", "fileSystem"],
+      "properties": {
+        "tenantId": { "type": "string", "description": "Entra tenant GUID or verified domain." },
+        "subscriptionId": { "type": "string", "description": "Azure subscription GUID containing the storage account." },
+        "resourceGroupName": { "type": "string", "description": "Resource group of the storage account. Optional; required only to capture existing Azure RBAC assignments." },
+        "storageAccountName": { "type": "string", "description": "ADLS Gen2 (HNS) storage account name." },
+        "fileSystem": { "type": "string", "description": "Container / filesystem name to scan." },
+        "rootPath": { "type": "string", "default": "/", "description": "Path within the filesystem to start the scan." }
+      }
+    },
+    "auth": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "type": "string", "enum": ["interactive", "sas"], "description": "interactive = sign-in prompt; sas = read+list SAS for the ADLS data plane." },
+        "sasToken": { "type": "string", "description": "Read+list SAS token; used only when mode = sas. Real values belong only in the git-ignored config.json." },
+        "graphScopes": {
+          "type": "array",
+          "items": { "type": "string" },
+          "default": ["Directory.Read.All", "Group.Read.All", "GroupMember.Read.All", "User.Read.All"],
+          "description": "Microsoft Graph READ scopes used to enumerate groups, memberships, and users."
+        }
+      }
+    },
+    "groups": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "namePrefixes": { "type": "array", "items": { "type": "string" }, "description": "Only enumerate groups whose displayName starts with one of these prefixes. Empty = all groups referenced by ACEs." },
+        "expandTransitiveMembership": { "type": "boolean", "default": true, "description": "Resolve effective membership through nested groups." }
+      }
+    },
+    "scan": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "includeAccessAces": { "type": "boolean", "default": true },
+        "includeDefaultAces": { "type": "boolean", "default": true, "description": "Capture default (inherited) ACEs in addition to access ACEs." },
+        "includeRbacAssignments": { "type": "boolean", "default": true, "description": "Capture existing Azure RBAC data-plane role assignments (expected empty for ACL-only estates)." },
+        "maxConcurrency": { "type": "integer", "minimum": 1, "maximum": 128, "default": 16, "description": "Bounded parallelism for path enumeration." },
+        "retry": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "maxAttempts": { "type": "integer", "minimum": 1, "default": 6 },
+            "baseDelayMs": { "type": "integer", "minimum": 0, "default": 500 }
+          },
+          "description": "Exponential backoff on throttling (429/503)."
+        },
+        "checkpointPath": { "type": "string", "default": "./data/.checkpoint.json", "description": "Resume file so large scans can stop/restart without re-walking." },
+        "pathFilters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "includePrefixes": { "type": "array", "items": { "type": "string" } },
+            "excludePrefixes": { "type": "array", "items": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "output": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "format": { "type": "string", "enum": ["json", "jsonl", "both"], "default": "both" },
+        "inventoryPath": { "type": "string", "default": "./data/inventory.json" },
+        "inventoryJsonlPath": { "type": "string", "default": "./data/inventory.jsonl" }
+      }
+    }
+  }
+}

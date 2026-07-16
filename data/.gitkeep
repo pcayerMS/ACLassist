@@ -1,0 +1,6 @@
+# Generated snapshots are written here and are git-ignored:
+#   inventory.json / inventory.jsonl   (M1)
+#   analysis.json                      (M3)
+#   recommendations.json               (M4)
+#   proposed-model.xlsx                (M4)
+#   .checkpoint.json                   (scan resume state)

@@ -1,0 +1,38 @@
+{
+  "target": {
+    "tenantId": "MngEnvMCAP272021.onmicrosoft.com",
+    "subscriptionId": "50dc9596-2592-474a-a767-2dd56e6c9996",
+    "resourceGroupName": "rg-lab1-adlsacl-cac",
+    "storageAccountName": "stlab1adlsaclcac",
+    "fileSystem": "adls-aircanada",
+    "rootPath": "/"
+  },
+  "auth": {
+    "mode": "interactive",
+    "sasToken": "",
+    "graphScopes": [
+      "Directory.Read.All",
+      "Group.Read.All",
+      "GroupMember.Read.All",
+      "User.Read.All"
+    ]
+  },
+  "groups": {
+    "namePrefixes": ["ADLS_", "PRD_"],
+    "expandTransitiveMembership": true
+  },
+  "scan": {
+    "includeAccessAces": true,
+    "includeDefaultAces": true,
+    "includeRbacAssignments": true,
+    "maxConcurrency": 16,
+    "retry": { "maxAttempts": 6, "baseDelayMs": 500 },
+    "checkpointPath": "./data/.checkpoint.json",
+    "pathFilters": { "includePrefixes": [], "excludePrefixes": [] }
+  },
+  "output": {
+    "format": "both",
+    "inventoryPath": "./data/inventory.json",
+    "inventoryJsonlPath": "./data/inventory.jsonl"
+  }
+}
