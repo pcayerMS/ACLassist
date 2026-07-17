@@ -40,8 +40,15 @@ members for ~2,312 groups **one at a time**, which takes several minutes (batchi
 optimization). Progress is printed. The container root `/` ACL is intentionally not captured (the
 cmdlets can't address it); every non‑root folder ACL is.
 
-## 4. View the inventory  *(M2)*
-Open the dashboard (Tab 1) to explore the list + map.
+## 4. View the inventory — dashboard Tab 1  *(M2)*
+```powershell
+cd web
+npm install          # first time (needs Node.js LTS)
+npm run dev          # copies ../data/inventory.json in, then serves the dashboard
+```
+Open the printed URL. Tab 1 shows KPI cards (folders, groups, users, ACEs, **orphan groups**) and
+searchable Folders / Groups / Users / RBAC tables. No scan yet? `npm run generate-sample` creates a demo
+inventory. *(The interactive map is the next increment.)*
 
 ## 5. Analyze + AI proposition  *(M3–M5)*
 Run the analyzer, then the Copilot assessment (`ai/prompts/assess.prompt.md`) to produce

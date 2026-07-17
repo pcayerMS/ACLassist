@@ -31,7 +31,8 @@ pwsh ./engine/Assert-Prerequisites.ps1
    subscription, storage account, file system). `config/config.json` is git‑ignored.
 2. Run the prerequisite check: `pwsh ./engine/Assert-Prerequisites.ps1`
 3. *(M1)* Run the scan → produces `data/inventory.json`.
-4. *(M2)* Open the dashboard → Tab 1 inventory.
+4. **Dashboard:** `cd web && npm install && npm run dev` — opens Tab 1 (inventory KPIs + tables). It
+   reads `data/inventory.json`; run `npm run generate-sample` first if you just want demo data.
 5. *(M3–M5)* Run the analyzer + Copilot assessment → Tab 2 proposition + editable Excel.
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
@@ -53,4 +54,5 @@ docs/      architecture, read-only guarantee, runbook
 
 ## Status
 Phase 1 (assessment). Milestones: **M0 — scaffold + safety** ✅ · **M1 — read‑only scan engine
-(`engine/Invoke-Scan.ps1` → `data/inventory.json`)** ✅ *(pending first validation run on the lab VM)*.
+(`engine/Invoke-Scan.ps1` → `data/inventory.json`)** ✅ (validated on the lab) · **M2 — dashboard
+Tab 1 (inventory KPIs + tables)** ✅ *(interactive map in progress)*.

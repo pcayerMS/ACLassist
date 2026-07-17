@@ -73,7 +73,7 @@ function Export-Inventory {
             }
             notes         = @(
                 'READ-ONLY snapshot. Effective (transitive) access is computed later by the offline analyzer.',
-                'Container root "/" ACL is not captured in Phase-1 M1 (cmdlets cannot address it); all non-root folder ACLs are captured.'
+                'Container root "/" ACL IS captured (read via the DFS REST getAccessControl call).'
             )
         }
         folders         = $AclResult.Folders
