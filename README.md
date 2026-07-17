@@ -15,24 +15,24 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
   into an RBAC‑style model, with a before→after map. You approve/modify/reject everything.
 
 ## Prerequisites
-- **PowerShell 7+**
-- PowerShell modules: `Az.Accounts`, `Az.Storage`, `Az.Resources`, `Microsoft.Graph.Authentication`,
-  `Microsoft.Graph.Groups`, `Microsoft.Graph.Users`
-- **Node.js LTS** (for the analyzer + dashboard)
+- **Windows PowerShell 5.1** (built into Windows) or PowerShell 7 — for the scan engine.
+- PowerShell modules `Az.Accounts`, `Az.Storage`, `Az.Resources`, `Microsoft.Graph.Authentication`,
+  `Microsoft.Graph.Groups`, `Microsoft.Graph.Users` — the checker **auto‑installs** these.
+- **The dashboard needs nothing** — it's a single HTML file you open in a browser.
 
-Run the checker — it offers to install anything missing (local installs only):
+Run the checker (offers to install any missing modules — current‑user only, no winget/Node):
 
 ```powershell
-pwsh ./engine/Assert-Prerequisites.ps1
+powershell -File ./engine/Assert-Prerequisites.ps1
 ```
 
 ## Quick start
 1. Copy `config/config.sample.json` → `config/config.json` and fill in your target (tenant,
    subscription, storage account, file system). `config/config.json` is git‑ignored.
-2. Run the prerequisite check: `pwsh ./engine/Assert-Prerequisites.ps1`
+2. Run the prerequisite check: `powershell -File ./engine/Assert-Prerequisites.ps1`
 3. *(M1)* Run the scan → produces `data/inventory.json`.
-4. **Dashboard:** `cd web && npm install && npm run dev` — opens Tab 1 (inventory KPIs + tables). It
-   reads `data/inventory.json`; run `npm run generate-sample` first if you just want demo data.
+4. **Dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/inventory.json`
+   (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + tables. No install.
 5. *(M3–M5)* Run the analyzer + Copilot assessment → Tab 2 proposition + editable Excel.
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
@@ -54,5 +54,5 @@ docs/      architecture, read-only guarantee, runbook
 
 ## Status
 Phase 1 (assessment). Milestones: **M0 — scaffold + safety** ✅ · **M1 — read‑only scan engine
-(`engine/Invoke-Scan.ps1` → `data/inventory.json`)** ✅ (validated on the lab) · **M2 — dashboard
-Tab 1 (inventory KPIs + tables)** ✅ *(interactive map in progress)*.
+(built‑in PowerShell 5.1+)** ✅ (validated on the lab) · **M2 — portable single‑file dashboard, Tab 1**
+✅ *(interactive map in progress)*.

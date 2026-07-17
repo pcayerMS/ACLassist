@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     Displays the READ-ONLY consent banner and asks the operator to confirm before any scan.

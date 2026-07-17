@@ -22,5 +22,8 @@ This repository is a **READ‑ONLY** assessment tool. Follow these rules.
   editable Excel with `Decision` (Approve/Modify/Reject) columns. Keep the user in control.
 
 ## Language / tooling
-- Engine: **PowerShell 7** (`Az.*`, `Microsoft.Graph.*`). Analyzer + web: **Node/TypeScript**.
+- Engine: **Windows PowerShell 5.1+ or PowerShell 7** (`Az.*`, `Microsoft.Graph.*`); must stay 5.1‑compatible
+  (no ternary `? :`, no `??`, BOM‑free file writes). Analyzer + web: **Node/TypeScript**.
+- The dashboard ships as a **single self‑contained HTML** (`dashboard/ACLassist.html`) — customers open it
+  in a browser and load `data/inventory.json`; **no Node/npm/server on the customer machine**.
 - Keep the engine's dependency surface minimal and auditable.

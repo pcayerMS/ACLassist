@@ -1,29 +1,26 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
 .SYNOPSIS
-    READ-ONLY prerequisite check for the ADLS ACL assessment tool.
+    READ-ONLY prerequisite check for the ADLS ACL assessment engine.
 
 .DESCRIPTION
-    Verifies the local client has what the tool needs and OFFERS to install anything missing.
-    All installs are LOCAL only (PowerShell modules for the current user, and optionally Node.js LTS).
-    This script never contacts Azure or Microsoft Entra ID and never changes anything remote.
+    Runs on built-in Windows PowerShell 5.1 or on PowerShell 7. Verifies the Az + Microsoft.Graph
+    modules the read-only scan needs, and OFFERS to install any that are missing (Install-Module, current
+    user). Installs are LOCAL PowerShell modules only - this never contacts Azure/Entra and changes
+    nothing remote. The dashboard needs no install at all: open dashboard/ACLassist.html in any browser.
 
 .PARAMETER AssumeYes
-    Install missing/outdated prerequisites without prompting.
-
-.PARAMETER SkipNode
-    Skip the Node.js LTS check (Node is only needed for the analyzer + dashboard, not the scan).
+    Install missing/outdated modules without prompting.
 
 .EXAMPLE
-    pwsh ./engine/Assert-Prerequisites.ps1
+    powershell -File ./engine/Assert-Prerequisites.ps1     # Windows PowerShell 5.1 (built-in)
 
 .EXAMPLE
-    pwsh ./engine/Assert-Prerequisites.ps1 -AssumeYes
+    pwsh ./engine/Assert-Prerequisites.ps1 -AssumeYes      # PowerShell 7
 #>
 [CmdletBinding()]
 param(
-    [switch]$AssumeYes,
-    [switch]$SkipNode
+    [switch]$AssumeYes
 )
 
 $ErrorActionPreference = 'Stop'
@@ -43,18 +40,18 @@ function Get-InstalledModuleVersion {
 }
 
 Write-Host ''
-Write-Host 'ADLS ACL assessment — prerequisite check (READ-ONLY, local only)' -ForegroundColor Cyan
+Write-Host 'ADLS ACL assessment - prerequisite check (READ-ONLY, local only)' -ForegroundColor Cyan
 Write-Host '----------------------------------------------------------------' -ForegroundColor Cyan
 
-# --- PowerShell version -------------------------------------------------------
-$psOk = $PSVersionTable.PSVersion.Major -ge 7
-Write-Host ("PowerShell {0}  =>  {1}" -f $PSVersionTable.PSVersion, ($psOk ? 'OK' : 'NEEDS 7+')) `
-    -ForegroundColor ($psOk ? 'Green' : 'Red')
-if (-not $psOk) {
-    Write-Warning 'PowerShell 7+ is required. Install from https://aka.ms/powershell and re-run this script with pwsh.'
-}
+# --- PowerShell version (Windows PowerShell 5.1 built-in is fine; 7 also works) ---
+$psVersion = $PSVersionTable.PSVersion
+$psOk = $psVersion -ge [version]'5.1'
+$psLabel = 'OK (5.1+)'
+$psColor = 'Green'
+if (-not $psOk) { $psLabel = 'NEEDS 5.1+'; $psColor = 'Red' }
+Write-Host ("PowerShell {0}  =>  {1}" -f $psVersion, $psLabel) -ForegroundColor $psColor
 
-# --- Required PowerShell modules ---------------------------------------------
+# --- Required PowerShell modules (support Windows PowerShell 5.1 and PowerShell 7) ---
 $required = @(
     @{ Name = 'Az.Accounts';                     MinVersion = '2.12.0' }
     @{ Name = 'Az.Storage';                      MinVersion = '5.5.0'  }
@@ -66,10 +63,9 @@ $required = @(
 
 $results = foreach ($mod in $required) {
     $installed = Get-InstalledModuleVersion -Name $mod.Name
-    $status =
-        if (-not $installed)                            { 'Missing'  }
-        elseif ($installed -lt [version]$mod.MinVersion) { 'Outdated' }
-        else                                             { 'OK'       }
+    $status = 'OK'
+    if (-not $installed) { $status = 'Missing' }
+    elseif ($installed -lt [version]$mod.MinVersion) { $status = 'Outdated' }
     [pscustomobject]@{
         Component = $mod.Name
         Required  = $mod.MinVersion
@@ -84,7 +80,12 @@ $results | Format-Table -AutoSize | Out-String | Write-Host
 $toInstall = $results | Where-Object { $_.Status -in @('Missing', 'Outdated') }
 if ($toInstall) {
     Write-Host ("{0} module(s) need installing/upgrading." -f $toInstall.Count) -ForegroundColor Yellow
-    if (Confirm-Action "Install/upgrade them for the CURRENT USER from the PowerShell Gallery?") {
+    if (Confirm-Action 'Install/upgrade them for the CURRENT USER from the PowerShell Gallery?') {
+        # Windows PowerShell 5.1 may need the NuGet provider + a trusted PSGallery before Install-Module.
+        if ($psVersion.Major -lt 6) {
+            try { if (-not (Get-PackageProvider -Name NuGet -ErrorAction SilentlyContinue)) { Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Scope CurrentUser -Force | Out-Null } } catch { }
+        }
+        try { if ((Get-PSRepository -Name PSGallery -ErrorAction SilentlyContinue).InstallationPolicy -ne 'Trusted') { Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue } } catch { }
         foreach ($item in $toInstall) {
             Write-Host ("Installing {0} ..." -f $item.Component) -ForegroundColor Cyan
             Install-Module -Name $item.Component -Scope CurrentUser -Force -AllowClobber -Repository PSGallery
@@ -99,43 +100,19 @@ else {
     Write-Host 'All required PowerShell modules are present.' -ForegroundColor Green
 }
 
-# --- Node.js LTS (for analyzer + dashboard) ----------------------------------
-if (-not $SkipNode) {
-    Write-Host ''
-    $node = Get-Command node -ErrorAction SilentlyContinue
-    if ($node) {
-        $nodeVersion = (& node --version).Trim()
-        Write-Host ("Node.js {0}  =>  OK" -f $nodeVersion) -ForegroundColor Green
-    }
-    else {
-        Write-Host 'Node.js LTS not found (needed for the analyzer + dashboard, not for the scan).' -ForegroundColor Yellow
-        $winget = Get-Command winget -ErrorAction SilentlyContinue
-        if ($IsWindows -and $winget) {
-            if (Confirm-Action 'Install Node.js LTS via winget (OpenJS.NodeJS.LTS)?') {
-                winget install --id OpenJS.NodeJS.LTS -e --source winget
-            }
-            else {
-                Write-Warning 'Skipped Node.js install. Get the LTS from https://nodejs.org/en when you reach M2/M3.'
-            }
-        }
-        else {
-            Write-Warning 'Install Node.js LTS from https://nodejs.org/en (needed at M2/M3).'
-        }
-    }
-}
-
 # --- Summary (recompute module state so it reflects any installs above) -------
 Write-Host ''
 $missingNow = foreach ($mod in $required) {
-    $v = Get-InstalledModuleVersion -Name $mod.Name
-    if (-not $v -or $v -lt [version]$mod.MinVersion) { $mod.Name }
+    $ver = Get-InstalledModuleVersion -Name $mod.Name
+    if (-not $ver -or $ver -lt [version]$mod.MinVersion) { $mod.Name }
 }
 if (-not $psOk -or $missingNow) {
-    Write-Host 'Prerequisite check finished with items still outstanding — see the warnings above.' -ForegroundColor Yellow
+    Write-Host 'Prerequisite check finished with items still outstanding - see the warnings above.' -ForegroundColor Yellow
     if ($missingNow) { Write-Host ("  Still needed: {0}" -f ($missingNow -join ', ')) -ForegroundColor Yellow }
 }
 else {
-    Write-Host 'Prerequisites satisfied. Configure config/config.json and run the scan (M1).' -ForegroundColor Green
+    Write-Host 'Prerequisites satisfied. Configure config/config.json and run the scan.' -ForegroundColor Green
 }
+Write-Host 'Dashboard: no install needed - just open dashboard/ACLassist.html in any browser.' -ForegroundColor Gray
 
 return $results

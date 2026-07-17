@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
   Common.ps1 — shared, READ-ONLY helpers for the scan engine. Dot-sourced by Invoke-Scan.ps1.
   No Azure/Entra mutation occurs here; helpers only read config, format output, and parse data.
@@ -87,9 +87,9 @@ function ConvertTo-SymbolicPermission {
     if ($null -eq $Value) { return '' }
     $s = "$Value".Trim()
     if ($s -match '^[rwxsStT-]{3}$' -or $s -match '^[rwxsStT-]{9}$') { return $s.ToLower() }
-    $r = ($s -match 'Read')    ? 'r' : '-'
-    $w = ($s -match 'Write')   ? 'w' : '-'
-    $x = ($s -match 'Execute') ? 'x' : '-'
+    $r = if ($s -match 'Read')    { 'r' } else { '-' }
+    $w = if ($s -match 'Write')   { 'w' } else { '-' }
+    $x = if ($s -match 'Execute') { 'x' } else { '-' }
     return "$r$w$x"
 }
 
@@ -157,7 +157,8 @@ function Write-Jsonl {
         [Parameter(Mandatory)][string]$Path,
         [Parameter(Mandatory)]$InputObject
     )
-    ($InputObject | ConvertTo-Json -Depth 8 -Compress) | Add-Content -Path $Path -Encoding utf8
+    ($InputObject | ConvertTo-Json -Depth 8 -Compress) |
+        ForEach-Object { [System.IO.File]::AppendAllText($Path, $_ + [Environment]::NewLine, (New-Object System.Text.UTF8Encoding($false))) }
 }
 
 function Test-PathFilter {

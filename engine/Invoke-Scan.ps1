@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
 .SYNOPSIS
     READ-ONLY assessment scan: enumerates ADLS Gen2 ACLs + Entra groups/members/users and writes a
@@ -45,8 +45,10 @@ if (-not (Show-ReadOnlyConsent -AssumeYes:$AssumeYes)) { return }
 
 $started = Get-Date
 
-$invPath = Resolve-RepoPath ($cfg.output.inventoryPath ?? './data/inventory.json') $repoRoot
-$jsonlPath = Resolve-RepoPath ($cfg.output.inventoryJsonlPath ?? './data/inventory.jsonl') $repoRoot
+$invRel = if ($cfg.output.inventoryPath) { $cfg.output.inventoryPath } else { './data/inventory.json' }
+$jsonlRel = if ($cfg.output.inventoryJsonlPath) { $cfg.output.inventoryJsonlPath } else { './data/inventory.jsonl' }
+$invPath = Resolve-RepoPath $invRel $repoRoot
+$jsonlPath = Resolve-RepoPath $jsonlRel $repoRoot
 $dataDir = Split-Path -Parent $invPath
 if ($dataDir -and -not (Test-Path $dataDir)) { New-Item -ItemType Directory -Path $dataDir -Force | Out-Null }
 

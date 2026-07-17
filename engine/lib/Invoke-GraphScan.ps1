@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
   Invoke-GraphScan.ps1 — READ-ONLY enumeration of Entra groups, members (nesting + user
   memberships), users, and existing Azure RBAC assignments on the storage account.

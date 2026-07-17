@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
   Connect-Target.ps1 — establishes READ-ONLY sessions to Azure, ADLS, and Microsoft Graph.
   Uses only client-side context cmdlets + sign-in. Nothing here mutates Azure or Entra.

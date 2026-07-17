@@ -11,6 +11,7 @@
     "dev": "vite",
     "prebuild": "node scripts/copy-inventory.mjs",
     "build": "tsc --noEmit && vite build",
+    "portable": "npm run build && node scripts/emit-portable.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -22,6 +23,7 @@
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.6.3",
-    "vite": "^6.0.7"
+    "vite": "^6.0.7",
+    "vite-plugin-singlefile": "^2.3.3"
   }
 }

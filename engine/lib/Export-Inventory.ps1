@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
   Export-Inventory.ps1 — assembles the normalized, offline-friendly inventory.json from the ADLS +
   Graph scan results. Pure local file assembly; no Azure/Entra access.
@@ -88,7 +88,8 @@ function Export-Inventory {
 
     $dir = Split-Path -Parent $OutPath
     if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
-    $inventory | ConvertTo-Json -Depth 12 | Set-Content -Path $OutPath -Encoding utf8
+    $json = $inventory | ConvertTo-Json -Depth 12
+    [System.IO.File]::WriteAllText($OutPath, $json, (New-Object System.Text.UTF8Encoding($false)))
 
     Write-ScanLog OK ("Inventory written: {0}" -f $OutPath)
     return $inventory.meta.counts

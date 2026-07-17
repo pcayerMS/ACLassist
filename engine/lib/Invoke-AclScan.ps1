@@ -1,4 +1,4 @@
-#Requires -Version 7.0
+#Requires -Version 5.1
 <#
   Invoke-AclScan.ps1 — READ-ONLY enumeration of ADLS Gen2 folders + ACLs via the DFS REST API.
   Uses GET (List Paths) + HEAD (getAccessControl) only, authenticated with an Entra OAuth bearer token
