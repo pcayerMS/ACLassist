@@ -41,6 +41,10 @@ $repoRoot = Split-Path -Parent $here
 if (-not $ConfigPath) { $ConfigPath = Join-Path $repoRoot 'config/config.json' }
 $cfg = Get-ScanConfig -Path $ConfigPath
 
+Write-Host ''
+Write-Host ('Target : {0} / {1}' -f $cfg.target.storageAccountName, $cfg.target.fileSystem) -ForegroundColor Cyan
+Write-Host ('Sub    : {0}   Tenant: {1}' -f $cfg.target.subscriptionId, $cfg.target.tenantId) -ForegroundColor Cyan
+
 if (-not (Show-ReadOnlyConsent -AssumeYes:$AssumeYes)) { return }
 
 $started = Get-Date

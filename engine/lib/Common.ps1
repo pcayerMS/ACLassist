@@ -42,7 +42,17 @@ function Get-ScanConfig {
     param([Parameter(Mandatory)][string]$Path)
 
     if (-not (Test-Path $Path)) {
-        throw "Config not found: $Path`nCopy config/config.sample.json to config/config.json and edit it."
+        $sample = Join-Path (Split-Path -Parent $Path) 'config.sample.json'
+        if (Test-Path $sample) {
+            Copy-Item -Path $sample -Destination $Path
+            Write-Host ''
+            Write-Host 'No config/config.json found - created one from config.sample.json.' -ForegroundColor Yellow
+            Write-Host ('  {0}' -f $Path) -ForegroundColor Yellow
+            Write-Host '  Review the target (tenant / subscription / storage account) before scanning a real environment.' -ForegroundColor Yellow
+        }
+        else {
+            throw "Config not found: $Path`nCopy config/config.sample.json to config/config.json and edit it."
+        }
     }
     $cfg = Get-Content -Path $Path -Raw | ConvertFrom-Json
     foreach ($section in 'target', 'auth') {
