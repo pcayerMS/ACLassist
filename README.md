@@ -33,7 +33,9 @@ powershell -File ./engine/Assert-Prerequisites.ps1
 3. *(M1)* Run the scan → produces `data/inventory.json`.
 4. **Dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/inventory.json`
    (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + tables. No install.
-5. *(M3–M5)* Run the analyzer + Copilot assessment → Tab 2 proposition + editable Excel.
+5. **Analyze:** `powershell -File ./analyzer/Invoke-Analysis.ps1` → `data/analysis.json` (duplicate
+   groups, personas, role‑collapse model, quantified savings).
+6. *(M4–M5)* Run the Copilot assessment → Tab 2 proposition + editable Excel.
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
@@ -43,16 +45,18 @@ This repo is target‑agnostic. Secrets and real values live only in the git‑i
 
 ## Repository layout
 ```
-config/    target + auth configuration (config.json is git-ignored)
-engine/    PowerShell extractor — Azure-facing, READ-ONLY → data/inventory.json
-analyzer/  Node/TS deterministic analysis (offline) → data/analysis.json      (M3)
-ai/        Copilot prompt + schema + Excel export/import (user control)        (M4)
-web/       Vite + React static dashboard (Tab 1 inventory, Tab 2 proposition)  (M2/M5)
-data/      generated artifacts (git-ignored)
-docs/      architecture, read-only guarantee, runbook
+config/     target + auth configuration (config.json is git-ignored)
+engine/     PowerShell extractor — Azure-facing, READ-ONLY → data/inventory.json      (M1)
+analyzer/   PowerShell offline analysis → data/analysis.json                          (M3)
+ai/         Copilot prompt + schema + Excel export/import (user control)              (M4)
+web/        Vite + React dashboard source (build → single self-contained HTML)        (M2/M5)
+dashboard/  ACLassist.html — the built, ready-to-open single-file dashboard
+data/       generated artifacts (git-ignored)
+docs/       architecture, read-only guarantee, runbook
 ```
 
 ## Status
 Phase 1 (assessment). Milestones: **M0 — scaffold + safety** ✅ · **M1 — read‑only scan engine
 (built‑in PowerShell 5.1+)** ✅ (validated on the lab) · **M2 — portable single‑file dashboard, Tab 1**
-✅ *(interactive map in progress)*.
+✅ *(interactive map in progress)* · **M3 — offline analyzer (`analyzer/Invoke-Analysis.ps1` →
+`data/analysis.json`)** ✅.

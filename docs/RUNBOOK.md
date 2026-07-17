@@ -52,11 +52,18 @@ Users / RBAC tables. Everything runs locally in the browser — nothing is uploa
 
 *(Maintainers only — to rebuild the HTML from source: `cd web && npm install && npm run portable`.)*
 
-## 5. Analyze + AI proposition  *(M3–M5)*
-Run the analyzer, then the Copilot assessment (`ai/prompts/assess.prompt.md`) to produce
-`data/recommendations.json` + `data/proposed-model.xlsx`. Edit the Excel to approve/modify/reject, then
-review Tab 2.
+## 5. Analyze the sprawl  *(M3)*
+```powershell
+powershell -File ./analyzer/Invoke-Analysis.ps1
+```
+Reads `data/inventory.json` (+ `data/inventory.jsonl`) **offline** and writes `data/analysis.json`:
+duplicate‑grant groups, orphan/empty groups, user **personas** (by effective access), a mechanical
+role‑collapse model (per department × access level), and **quantified savings**. No Azure, no new install.
+
+## 6. AI proposition  *(M4–M5, next)*
+In VS Code + GitHub Copilot, run `ai/prompts/assess.prompt.md` — Copilot reads `analysis.json`, names the
+roles, writes the rationale, and produces `data/recommendations.json` + the editable Excel for Tab 2.
 
 ---
-*M0 delivered the scaffold + safety + prerequisites; **M1 delivers the scan above**. Steps 4–5
-(dashboard + AI proposition) arrive in later milestones.*
+*M0 scaffold + safety · M1 read‑only scan · M2 single‑file dashboard · M3 offline analyzer (above).
+M4–M5 (AI proposition + Tab 2) are next.*
