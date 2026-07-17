@@ -5,6 +5,22 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-17 — Behavioural group classification + effective-access-aware status
+- **`kind` (name prefix) is no longer the semantic driver.** Each group now carries a naming-independent
+  **`role`** — `access` (on a folder ACL), `role` (aggregates members), `hybrid` (both), `unused` (neither) —
+  derived from *observed* facts, so the tool works on **any** customer's naming, not just Air Canada's
+  `ADLS_`/`PRD_`.
+- **New effective-access-aware `status`:** `active`, **`unreachable`** (on a folder ACL but **no user is an
+  effective member** — a dead grant), or `unused`. Computed via **transitive membership** (engine and sample
+  generator share the same reachability walk). This replaces the crude "orphan = empty OR not-on-ACL" test
+  that mislabeled a two-tier estate, where role groups *and* resource groups both looked "orphan".
+- **Engine** (`Export-Inventory.ps1` + `Common.ps1`): groups gain `role`, `status`, `onAce`, `memberCount`,
+  `reachable`; `meta.counts` gains `accessGroups`, `roleGroups`, `unreachableGroups`. `hygiene.orphanGroups`
+  now lists non-active groups (still carries `emptyMembers`/`notOnAnyAce` for the analyzer).
+- **Dashboard:** Groups table shows **Role**, **Status**, **Naming** (the old prefix, kept as a label) and
+  **Members**; the KPI card is relabeled **Unreachable**; the sprawl callout reads "N of M access groups reach no user".
+- On the sample: **2,304 access + 8 role groups; 2,286 unreachable** dead grants, 26 active.
+
 ## 2026-07-17 — Phase A: Dashboard Tab 1 upgrades
 - **Per‑column filtering** on every inventory table — free‑text inputs and, for categorical columns,
   **select dropdowns** — replacing the single global search. Active filters render as removable **chips**

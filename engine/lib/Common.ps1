@@ -162,6 +162,85 @@ function Get-GroupKind {
     return 'other'
 }
 
+function Resolve-GroupReachable {
+    # Recursive, memoized: does at least one USER end up an effective member of $Gid?
+    # Membership flows child -> parent: a group's effective users = its direct users
+    # PLUS the effective users of every group nested INTO it (its member-groups).
+    param(
+        [string]$Gid,
+        [hashtable]$DirectUsers,
+        [hashtable]$ChildrenOf,
+        [hashtable]$Memo,
+        $Stack
+    )
+    if ($Memo.ContainsKey($Gid)) { return $Memo[$Gid] }
+    if ($Stack.Contains($Gid)) { return $false }   # cycle guard
+    $result = $false
+    if ($DirectUsers.ContainsKey($Gid)) {
+        $result = $true
+    }
+    elseif ($ChildrenOf.ContainsKey($Gid)) {
+        [void]$Stack.Add($Gid)
+        foreach ($child in $ChildrenOf[$Gid]) {
+            if (Resolve-GroupReachable -Gid $child -DirectUsers $DirectUsers -ChildrenOf $ChildrenOf -Memo $Memo -Stack $Stack) {
+                $result = $true
+                break
+            }
+        }
+        [void]$Stack.Remove($Gid)
+    }
+    $Memo[$Gid] = $result
+    return $result
+}
+
+function Get-ReachableGroupMap {
+    # Returns a hashtable { groupId -> [bool] reachable-by-at-least-one-user (transitively) }.
+    param($Memberships, $Nesting)
+    $directUsers = @{}
+    $childrenOf = @{}
+    foreach ($m in @($Memberships)) {
+        if ($m.memberType -eq 'user') {
+            $directUsers[$m.groupId] = $true
+        }
+        elseif ($m.memberType -eq 'group') {
+            if (-not $childrenOf.ContainsKey($m.groupId)) { $childrenOf[$m.groupId] = New-Object System.Collections.Generic.List[string] }
+            $childrenOf[$m.groupId].Add($m.memberId)
+        }
+    }
+    foreach ($n in @($Nesting)) {
+        if (-not $childrenOf.ContainsKey($n.parentGroupId)) { $childrenOf[$n.parentGroupId] = New-Object System.Collections.Generic.List[string] }
+        $childrenOf[$n.parentGroupId].Add($n.childGroupId)
+    }
+    $memo = @{}
+    $ids = New-Object System.Collections.Generic.HashSet[string]
+    foreach ($k in $directUsers.Keys) { [void]$ids.Add($k) }
+    foreach ($k in $childrenOf.Keys) {
+        [void]$ids.Add($k)
+        foreach ($c in $childrenOf[$k]) { [void]$ids.Add($c) }
+    }
+    foreach ($gid in $ids) {
+        [void](Resolve-GroupReachable -Gid $gid -DirectUsers $directUsers -ChildrenOf $childrenOf -Memo $memo -Stack (New-Object System.Collections.Generic.HashSet[string]))
+    }
+    return $memo
+}
+
+function Get-GroupRole {
+    # Behavioural (naming-independent) classification of a group's function.
+    param([bool]$OnAce, [bool]$HasMembers)
+    if ($OnAce -and $HasMembers) { return 'hybrid' }
+    if ($OnAce) { return 'access' }
+    if ($HasMembers) { return 'role' }
+    return 'unused'
+}
+
+function Get-GroupStatus {
+    # Effective-access-aware liveness. 'unreachable' = carries a folder grant but no user reaches it.
+    param([string]$Role, [bool]$OnAce, [bool]$Reachable)
+    if ($Role -eq 'unused') { return 'unused' }
+    if ($OnAce -and -not $Reachable) { return 'unreachable' }
+    return 'active'
+}
+
 function Write-Jsonl {
     param(
         [Parameter(Mandatory)][string]$Path,

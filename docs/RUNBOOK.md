@@ -47,12 +47,15 @@ REST getAccessControl call).
 dashboard/ACLassist.html
 ```
 Click **Open your inventory.json** (or drag it in) and pick the `data/inventory.json` the scan produced.
-Tab 1 shows KPI cards (folders, groups, users, ACEs, **orphan groups**, group nesting, memberships,
+Tab 1 shows KPI cards (folders, groups, users, ACEs, **unreachable groups**, group nesting, memberships,
 storage roles) and the inventory as **Groups / Folders / Users / Group nesting / Memberships / Storage
 roles** tables. Each table has **per‑column filters** (text or dropdown), **click‑to‑sort** headers, and
-**Export filtered / Export all** to Excel (`.xlsx`). **Click any KPI card** to jump to the matching table
-with the relevant filter pre‑applied (e.g. *Orphan groups* → Groups filtered to `status = orphan`); active
-filters show as chips you can clear. The **Storage roles** tab lists the *existing* Azure role assignments
+**Export filtered / Export all** to Excel (`.xlsx`). The **Groups** table classifies each group by observed
+function — **Role** (`access` on a folder ACL / `role` aggregates members / `hybrid` both / `unused` neither,
+naming‑independent) and **Status** (`active`, or **`unreachable`** = on an ACL but no user is an effective
+member — a dead grant); the old `ADLS_`/`PRD_` prefix is kept as the **Naming** label. **Click any KPI card**
+to jump to the matching table with the relevant filter pre‑applied (e.g. *Unreachable* → Groups filtered to
+`status = unreachable`); active filters show as chips you can clear. The **Storage roles** tab lists the *existing* Azure role assignments
 on the storage account (data‑ vs control‑plane) — a separate system from the folder ACLs, **not** the RBAC
 model proposed in Tab 2. Everything runs locally in the browser — nothing is uploaded.
 

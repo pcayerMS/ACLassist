@@ -41,8 +41,8 @@ export function InventoryTab({ inv }: { inv: Inventory }) {
       <div className="callout">
         <span className="callout-icon">◆</span>
         <div>
-          <b>Sprawl signal — {(inv.meta.counts.orphanGroups ?? 0).toLocaleString()} of {(inv.meta.counts.groups ?? 0).toLocaleString()} groups are orphaned</b>
-          <div className="callout-sub">Groups with no members and/or not used on any folder — the prime consolidation candidates the AI proposition (Tab 2) will target. Click any card above to jump to it.</div>
+          <b>Sprawl signal — {(inv.meta.counts.unreachableGroups ?? inv.meta.counts.orphanGroups ?? 0).toLocaleString()} of {(inv.meta.counts.accessGroups ?? inv.meta.counts.groups ?? 0).toLocaleString()} access groups reach no user</b>
+          <div className="callout-sub">They sit on a folder ACL but no user is an effective member — dead grants, and the prime consolidation targets for the AI proposition (Tab 2). Click any card above to jump to it.</div>
         </div>
       </div>
 
@@ -64,23 +64,36 @@ export function InventoryTab({ inv }: { inv: Inventory }) {
   );
 }
 
+const ROLE_TITLE: Record<string, string> = {
+  access: 'On a folder ACL — carries grants (resource tier)',
+  role: 'Has members / nests other groups but is not on any ACL (assignment tier)',
+  hybrid: 'On an ACL AND has members',
+  unused: 'Not on any ACL, no members',
+};
+const STATUS_TITLE: Record<string, string> = {
+  active: 'Confers or receives real access',
+  unreachable: 'On a folder ACL but no user is an effective member — a dead grant',
+  unused: 'Not on any ACL and has no members',
+};
+
 function GroupsTable({ groups, orphanById, initial }: { groups: Group[]; orphanById: Map<string, OrphanGroup>; initial?: Record<string, string> }) {
+  const roleOf = (g: Group) => g.role ?? 'n/a';
+  const statusOf = (g: Group) => g.status ?? (orphanById.has(g.id) ? 'unused' : 'active');
+  const statusCls = (s: string) => (s === 'active' ? 'tag-ok' : s === 'unreachable' ? 'tag-warn' : 'tag-dim');
   const columns: Column<Group>[] = [
     { key: 'displayName', header: 'Group', value: (g) => g.displayName, render: (g) => <span className="mono">{g.displayName}</span> },
-    { key: 'kind', header: 'Kind', filter: 'select', value: (g) => g.kind, render: (g) => <span className={'tag tag-' + g.kind.toLowerCase()}>{g.kind}</span> },
-    {
-      key: 'status', header: 'Status', filter: 'select',
-      value: (g) => (orphanById.has(g.id) ? 'orphan' : 'in use'),
-      render: (g) => {
-        const o = orphanById.get(g.id);
-        if (!o) return <span className="tag tag-ok">in use</span>;
-        const parts = [o.emptyMembers ? 'no members' : null, o.notOnAnyAce ? 'no ACL' : null].filter(Boolean).join(' · ');
-        return <span className="tag tag-warn" title={parts}>orphan</span>;
-      },
-    },
+    { key: 'role', header: 'Role', filter: 'select', value: (g) => roleOf(g), render: (g) => <span className={'tag tag-role-' + roleOf(g)} title={ROLE_TITLE[roleOf(g)]}>{roleOf(g)}</span> },
+    { key: 'status', header: 'Status', filter: 'select', value: (g) => statusOf(g), render: (g) => <span className={'tag ' + statusCls(statusOf(g))} title={STATUS_TITLE[statusOf(g)]}>{statusOf(g)}</span> },
+    { key: 'kind', header: 'Naming', filter: 'select', value: (g) => g.kind, render: (g) => <span className={'tag tag-' + g.kind.toLowerCase()}>{g.kind}</span> },
+    { key: 'members', header: 'Members', value: (g) => g.memberCount ?? 0 },
     { key: 'id', header: 'Object ID', value: (g) => g.id, render: (g) => <span className="mono dim">{g.id}</span> },
   ];
-  return <DataTable rows={groups} columns={columns} exportName="groups" initialFilters={initial} />;
+  return (
+    <>
+      <div className="view-note">Groups classified by <b>observed function</b> (naming-independent): <b>access</b> = on a folder ACL, <b>role</b> = aggregates members, <b>hybrid</b> = both, <b>unused</b> = neither. <b>Status</b> is effective-access aware — <b>unreachable</b> means on an ACL but no user actually reaches it.</div>
+      <DataTable rows={groups} columns={columns} exportName="groups" initialFilters={initial} />
+    </>
+  );
 }
 
 function FoldersTable({ folders, initial }: { folders: Folder[]; initial?: Record<string, string> }) {

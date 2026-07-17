@@ -64,3 +64,7 @@ Phase 1 (assessment). Milestones: **M0 — scaffold + safety** ✅ · **M1 — r
 ✅ *(interactive map in progress)* **· Phase A** — per‑column filters, Excel export, click‑to‑sort,
 clickable KPI cards, and Group‑nesting / Memberships / Storage‑roles sub‑tables ✅ · **M3 — offline
 analyzer (`analyzer/Invoke-Analysis.ps1` → `data/analysis.json`)** ✅.
+
+**Behavioural group model** — groups are labelled by *observed function* (access / role / hybrid / unused)
+with an effective-access **status** (active / **unreachable** / unused), naming-independent so it works for
+any customer ✅.

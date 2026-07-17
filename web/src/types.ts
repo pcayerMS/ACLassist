@@ -38,6 +38,11 @@ export interface Group {
   displayName: string;
   description?: string | null;
   kind: string;
+  role?: string;
+  status?: string;
+  onAce?: boolean;
+  memberCount?: number;
+  reachable?: boolean;
   securityEnabled: boolean;
   mail?: string | null;
 }
@@ -53,7 +58,7 @@ export interface User {
 export interface Membership { groupId: string; memberId: string; memberType: string }
 export interface Nesting { parentGroupId: string; childGroupId: string }
 export interface Rbac { principalId: string; principalType: string; roleDefinitionName: string; scope: string }
-export interface OrphanGroup { id: string; displayName: string; emptyMembers: boolean; notOnAnyAce: boolean }
+export interface OrphanGroup { id: string; displayName: string; emptyMembers: boolean; notOnAnyAce: boolean; status?: string }
 
 export interface Inventory {
   meta: InventoryMeta;

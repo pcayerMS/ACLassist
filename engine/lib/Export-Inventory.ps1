@@ -16,29 +16,46 @@ function Export-Inventory {
 
     Write-ScanLog OK 'Assembling inventory'
 
-    $groupsOut = foreach ($g in $GraphResult.Groups) {
-        [pscustomobject]@{
+    # Reference / membership maps for behavioural classification.
+    $referenced = @{}
+    foreach ($k in $AclResult.PrincipalRefs.Keys) { $referenced[$k] = $true }
+    $memberCount = @{}
+    foreach ($m in $GraphResult.Memberships) {
+        if ($memberCount.ContainsKey($m.groupId)) { $memberCount[$m.groupId] = $memberCount[$m.groupId] + 1 } else { $memberCount[$m.groupId] = 1 }
+    }
+    $isParent = @{}
+    foreach ($n in $GraphResult.Nesting) { $isParent[$n.parentGroupId] = $true }
+    $reachable = Get-ReachableGroupMap -Memberships $GraphResult.Memberships -Nesting $GraphResult.Nesting
+
+    # Classify each group by its OBSERVED function (naming-independent) and effective-access liveness.
+    $groupsOut = New-Object System.Collections.Generic.List[object]
+    $orphanGroups = New-Object System.Collections.Generic.List[object]
+    $nAccess = 0; $nHybrid = 0; $nRole = 0; $nUnused = 0; $nUnreachable = 0
+    foreach ($g in $GraphResult.Groups) {
+        $onAce = $referenced.ContainsKey($g.Id)
+        $mc = 0; if ($memberCount.ContainsKey($g.Id)) { $mc = $memberCount[$g.Id] }
+        $isP = $isParent.ContainsKey($g.Id)
+        $hasMem = ($mc -gt 0) -or $isP
+        $rch = ($reachable.ContainsKey($g.Id) -and $reachable[$g.Id])
+        $role = Get-GroupRole -OnAce $onAce -HasMembers $hasMem
+        $status = Get-GroupStatus -Role $role -OnAce $onAce -Reachable $rch
+        switch ($role) { 'access' { $nAccess++ } 'hybrid' { $nHybrid++ } 'role' { $nRole++ } 'unused' { $nUnused++ } }
+        if ($status -eq 'unreachable') { $nUnreachable++ }
+        $groupsOut.Add([pscustomobject]@{
             id              = $g.Id
             displayName     = $g.DisplayName
             description     = $g.Description
             kind            = (Get-GroupKind $g.DisplayName $Config)
+            role            = $role
+            status          = $status
+            onAce           = $onAce
+            memberCount     = $mc
+            reachable       = $rch
             securityEnabled = [bool]$g.SecurityEnabled
             mail            = $g.Mail
-        }
-    }
-
-    # Reference maps for hygiene flags.
-    $referenced = @{}
-    foreach ($k in $AclResult.PrincipalRefs.Keys) { $referenced[$k] = $true }
-    $hasMembers = @{}
-    foreach ($m in $GraphResult.Memberships) { $hasMembers[$m.groupId] = $true }
-    foreach ($n in $GraphResult.Nesting) { $hasMembers[$n.parentGroupId] = $true }
-
-    $orphanGroups = foreach ($g in $GraphResult.Groups) {
-        $empty = -not $hasMembers.ContainsKey($g.Id)
-        $unused = -not $referenced.ContainsKey($g.Id)
-        if ($empty -or $unused) {
-            [pscustomobject]@{ id = $g.Id; displayName = $g.DisplayName; emptyMembers = $empty; notOnAnyAce = $unused }
+        })
+        if ($status -ne 'active') {
+            $orphanGroups.Add([pscustomobject]@{ id = $g.Id; displayName = $g.DisplayName; emptyMembers = (-not $hasMem); notOnAnyAce = (-not $onAce); status = $status })
         }
     }
     $staleUsers = foreach ($u in $GraphResult.Users) { if (-not $u.accountEnabled) { $u } }
@@ -68,21 +85,24 @@ function Export-Inventory {
                 memberships     = $GraphResult.Memberships.Count
                 groupNesting    = $GraphResult.Nesting.Count
                 rbacAssignments = $GraphResult.Rbac.Count
-                orphanGroups    = @($orphanGroups).Count
+                accessGroups    = $nAccess + $nHybrid
+                roleGroups      = $nRole
+                unreachableGroups = $nUnreachable
+                orphanGroups    = $orphanGroups.Count
                 staleUsers      = @($staleUsers).Count
             }
             notes         = @(
-                'READ-ONLY snapshot. Effective (transitive) access is computed later by the offline analyzer.',
+                'READ-ONLY snapshot. Groups carry a behavioural role (access/role/hybrid/unused) and an effective-access status (active/unreachable/unused).',
                 'Container root "/" ACL IS captured (read via the DFS REST getAccessControl call).'
             )
         }
         folders         = $AclResult.Folders
-        groups          = @($groupsOut)
+        groups          = $groupsOut.ToArray()
         users           = $GraphResult.Users
         memberships     = $GraphResult.Memberships
         groupNesting    = $GraphResult.Nesting
         rbacAssignments = $GraphResult.Rbac
-        hygiene         = [ordered]@{ orphanGroups = @($orphanGroups); staleUsers = @($staleUsers) }
+        hygiene         = [ordered]@{ orphanGroups = $orphanGroups.ToArray(); staleUsers = @($staleUsers) }
         aceJsonl        = (Split-Path -Leaf $AclResult.AceJsonlPath)
     }
 

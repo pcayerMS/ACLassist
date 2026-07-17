@@ -91,6 +91,11 @@ td.empty { text-align: center; color: var(--dim); padding: 26px; }
 .tag-other { color: var(--muted); }
 .tag-ok { color: #8ef0bd; background: #10281c; border-color: #1f5138; }
 .tag-warn { color: #ffb0b3; background: #2a1418; border-color: #5b2a30; }
+.tag-dim { color: var(--muted); background: #171b24; border-color: var(--line); }
+.tag-role-access { color: #9fc0ff; background: #17223c; border-color: #2a3d63; }
+.tag-role-hybrid { color: #ffd79a; background: #2e2413; border-color: #5a4620; }
+.tag-role-role { color: #d9b4ff; background: #241a38; border-color: #40305e; }
+.tag-role-unused { color: var(--muted); background: #171b24; border-color: var(--line); }
 
 /* Status bar */
 .statusbar { display: flex; gap: 22px; align-items: center; padding: 9px 22px; border-top: 1px solid var(--line); background: #0d121d; color: var(--muted); font-size: 12px; }
