@@ -1,31 +1,33 @@
 import type { Inventory } from '../types';
 
+export interface KpiTarget { sub: string; filter?: { col: string; val: string } }
+
 function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0; }
 
-export function KpiCards({ inv }: { inv: Inventory }) {
+export function KpiCards({ inv, onNavigate }: { inv: Inventory; onNavigate: (t: KpiTarget) => void }) {
   const c = inv.meta.counts;
   const orphanPct = pct(c.orphanGroups ?? 0, c.groups ?? 0);
   const avgAces = c.folders ? (c.aces / c.folders).toFixed(1) : '0';
 
-  const cards: { label: string; value: number; sub: string; warn?: boolean }[] = [
-    { label: 'Folders', value: c.folders ?? 0, sub: 'directories scanned' },
-    { label: 'ACL entries', value: c.aces ?? 0, sub: `${avgAces} avg / folder` },
-    { label: 'Groups', value: c.groups ?? 0, sub: 'Entra security groups' },
-    { label: 'Users', value: c.users ?? 0, sub: 'principals' },
-    { label: 'Orphan groups', value: c.orphanGroups ?? 0, sub: `${orphanPct}% of all groups`, warn: orphanPct > 50 },
-    { label: 'Group nesting', value: c.groupNesting ?? 0, sub: 'parent → child edges' },
-    { label: 'Memberships', value: c.memberships ?? 0, sub: 'user → group edges' },
-    { label: 'RBAC assignments', value: c.rbacAssignments ?? 0, sub: 'data / mgmt plane' },
+  const cards: { label: string; value: number; sub: string; warn?: boolean; target: KpiTarget }[] = [
+    { label: 'Folders', value: c.folders ?? 0, sub: 'directories scanned', target: { sub: 'folders' } },
+    { label: 'ACL entries', value: c.aces ?? 0, sub: `${avgAces} avg / folder`, target: { sub: 'folders' } },
+    { label: 'Groups', value: c.groups ?? 0, sub: 'Entra security groups', target: { sub: 'groups' } },
+    { label: 'Users', value: c.users ?? 0, sub: 'in-scope principals', target: { sub: 'users' } },
+    { label: 'Orphan groups', value: c.orphanGroups ?? 0, sub: `${orphanPct}% of all groups`, warn: orphanPct > 50, target: { sub: 'groups', filter: { col: 'status', val: 'orphan' } } },
+    { label: 'Group nesting', value: c.groupNesting ?? 0, sub: 'parent → child edges', target: { sub: 'nesting' } },
+    { label: 'Memberships', value: c.memberships ?? 0, sub: 'user → group edges', target: { sub: 'memberships' } },
+    { label: 'Storage roles', value: c.rbacAssignments ?? 0, sub: 'Azure RBAC on the account', target: { sub: 'rbac' } },
   ];
 
   return (
     <section className="kpis">
       {cards.map((k) => (
-        <div key={k.label} className={'kpi' + (k.warn ? ' kpi-warn' : '')}>
+        <button key={k.label} className={'kpi' + (k.warn ? ' kpi-warn' : '')} onClick={() => onNavigate(k.target)} title="Open in the table below">
           <div className="kpi-value">{k.value.toLocaleString()}</div>
           <div className="kpi-label">{k.label}</div>
           <div className="kpi-sub">{k.sub}</div>
-        </div>
+        </button>
       ))}
     </section>
   );

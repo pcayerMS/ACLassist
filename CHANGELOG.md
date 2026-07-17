@@ -5,6 +5,20 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-17 — Phase A: Dashboard Tab 1 upgrades
+- **Per‑column filtering** on every inventory table — free‑text inputs and, for categorical columns,
+  **select dropdowns** — replacing the single global search. Active filters render as removable **chips**
+  with a **clear all**.
+- **Real Excel export** (`.xlsx`, via `write-excel-file` — MIT, 0 vulns): **Export filtered** (respects the
+  current filters/sort) or **Export all**, on every table.
+- **Click‑to‑sort** column headers.
+- **Clickable KPI cards** — each card jumps to the matching sub‑table and pre‑applies the relevant filter
+  (e.g. *Orphan groups* → Groups filtered to `status = orphan`).
+- **New sub‑tables:** **Group nesting** (parent → member group) and **Memberships** (member → group).
+- **RBAC tab relabeled “Storage roles”** with an info note clarifying these are the *existing* Azure role
+  assignments on the storage account (data‑ vs control‑plane), **not** the RBAC model proposed in Tab 2.
+- Single‑file dashboard grew to ~236 KB (bundles the offline Excel writer). Still **zero‑install**.
+
 ## 2026-07-17 — M3: Offline analyzer
 - **Added `analyzer/Invoke-Analysis.ps1`** — dependency‑free PowerShell, fully offline (no Azure).
   Reads `data/inventory.json` (+ `inventory.jsonl`) and writes `data/analysis.json`:

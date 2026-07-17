@@ -10,7 +10,9 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
 > performs **no remediation** in Phase 1. See [docs/SECURITY-READONLY.md](docs/SECURITY-READONLY.md).
 
 ## What it produces
-- **Tab 1 — Inventory:** the real ACL/permission structure as a searchable list + interactive map.
+- **Tab 1 — Inventory:** the real ACL/permission structure as filterable, sortable, Excel‑exportable
+  tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles) with clickable KPI cards that
+  jump straight to the relevant pre‑filtered view. *(Interactive map next.)*
 - **Tab 2 — Proposition:** AI‑generated, fully user‑editable recommendations to consolidate the sprawl
   into an RBAC‑style model, with a before→after map. You approve/modify/reject everything.
 
@@ -32,7 +34,8 @@ powershell -File ./engine/Assert-Prerequisites.ps1
 2. Run the prerequisite check: `powershell -File ./engine/Assert-Prerequisites.ps1`
 3. *(M1)* Run the scan → produces `data/inventory.json`.
 4. **Dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/inventory.json`
-   (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + tables. No install.
+   (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + filterable tables; click a KPI card
+   to jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.
 5. **Analyze:** `powershell -File ./analyzer/Invoke-Analysis.ps1` → `data/analysis.json` (duplicate
    groups, personas, role‑collapse model, quantified savings).
 6. *(M4–M5)* Run the Copilot assessment → Tab 2 proposition + editable Excel.
@@ -58,5 +61,6 @@ docs/       architecture, read-only guarantee, runbook
 ## Status
 Phase 1 (assessment). Milestones: **M0 — scaffold + safety** ✅ · **M1 — read‑only scan engine
 (built‑in PowerShell 5.1+)** ✅ (validated on the lab) · **M2 — portable single‑file dashboard, Tab 1**
-✅ *(interactive map in progress)* · **M3 — offline analyzer (`analyzer/Invoke-Analysis.ps1` →
-`data/analysis.json`)** ✅.
+✅ *(interactive map in progress)* **· Phase A** — per‑column filters, Excel export, click‑to‑sort,
+clickable KPI cards, and Group‑nesting / Memberships / Storage‑roles sub‑tables ✅ · **M3 — offline
+analyzer (`analyzer/Invoke-Analysis.ps1` → `data/analysis.json`)** ✅.
