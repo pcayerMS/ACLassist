@@ -21,8 +21,11 @@
         'Get-MgContext',
         # Storage client context (creates an in-memory object only)
         'New-AzStorageContext',
+        # Storage account + container discovery for interactive setup (management-plane reads)
+        'Get-AzStorageAccount',
+        'Get-AzRmStorageContainer',
         # ADLS Gen2 data-plane reads use the DFS REST API (GET List Paths, HEAD getAccessControl)
-        # with a token from Get-AzAccessToken, or a read+list SAS. See ReadOnlyRest below.
+        # with a token from Get-AzAccessToken. See ReadOnlyRest below.
         'Get-AzAccessToken',
         # Azure RBAC read
         'Get-AzRoleAssignment',

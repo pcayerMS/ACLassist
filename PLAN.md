@@ -26,7 +26,7 @@ repo the customer clones, opens in VS Code, points at their environment, runs, a
 ## 2. Guiding constraints (non‑negotiable)
 
 1. **READ‑ONLY, always.** The tool must never create, modify, move, or delete anything in Azure or
-   Entra ID. Enforced by (a) read‑only APIs/cmdlets only, (b) read‑only scopes/SAS permissions,
+   Entra ID. Enforced by (a) read‑only APIs/cmdlets only, (b) read‑only Graph scopes,
    (c) a pre‑run consent banner, (d) a documented operation allowlist. No write path exists in the code.
 2. **Customer notified before running** that the tool is harmless and non‑mutating (explicit banner + confirm).
 3. **User in control.** AI *proposes*; the user approves/modifies/rejects everything (via Excel round‑trip).
@@ -42,7 +42,7 @@ repo the customer clones, opens in VS Code, points at their environment, runs, a
 ```mermaid
 flowchart LR
     subgraph AZ["PowerShell engine — READ-ONLY, Azure-facing"]
-        A[Assert prerequisites\n+ consent banner] --> B[Connect:\ninteractive sign-in OR read SAS]
+        A[Assert prerequisites\n+ consent banner] --> B[Connect:\ninteractive sign-in]
         B --> C[Scan ADLS ACLs\n+ Entra groups / members / nesting]
         C --> D[(inventory.json / .jsonl)]
     end
@@ -93,9 +93,10 @@ acl-reporting/
   config/
     config.sample.json           # tenant, subscription, storageAccount, container, filters, scale opts
   engine/                        # PowerShell — Azure-facing, READ ONLY
-    Assert-Prerequisites.ps1     # checks PS7 + modules (+ Node for later steps); offers install
+    Assert-Prerequisites.ps1     # checks PowerShell 5.1+ and Az/Graph modules; offers install
+    Initialize-Config.ps1        # interactive setup -> config/config.json (git-ignored)
     Show-ReadOnlyConsent.ps1     # banner + explicit confirmation
-    Connect-Target.ps1           # interactive sign-in OR SAS entry
+    Connect-Target.ps1           # interactive sign-in (Azure + Microsoft Graph)
     Invoke-AclScan.ps1           # ADLS enumeration + getAccessControl (parallel, resumable)
     Invoke-GraphScan.ps1         # groups, transitive members, nesting, users
     Export-Inventory.ps1         # normalize -> inventory.json / .jsonl
@@ -138,10 +139,10 @@ acl-reporting/
 - Never installs silently; user confirms each install.
 
 ### 6.2 Connection & authentication (read‑only)
-- **Interactive prompt** as primary: device‑code / browser sign‑in for both Azure and Microsoft Graph.
-- **Optional read‑only SAS** for the ADLS data plane (permissions limited to read + list; no write/delete/move).
+- **Interactive sign‑in only:** device‑code / browser sign‑in for both Azure and Microsoft Graph. No SAS,
+  no account keys, no stored secret; an optional saved **UPN login hint** pre‑fills the prompt.
 - Graph always uses **read scopes**: `Directory.Read.All`, `Group.Read.All`, `GroupMember.Read.All`, `User.Read.All`.
-- Azure data‑plane read via either the signed‑in identity (needs **Storage Blob Data Reader**) or the SAS.
+- Azure data‑plane read via the signed‑in identity (needs **Storage Blob Data Reader**).
 - **Network note:** if the ADLS uses a private endpoint, the engine must run where it can resolve/reach it
   (e.g., in‑network / on a jump host). This is a *placement* constraint, documented in the runbook.
 
@@ -216,7 +217,7 @@ decisions into `recommendations.json`, which the dashboard then reflects (approv
 ## 7. Read‑only safety design (the important part)
 - **Allowlist:** `engine/ReadOnly.Allowlist.psd1` enumerates the only permitted operations (all `Get-*` /
   list / `getAccessControl`). No `New-`/`Set-`/`Remove-`/`Update-`/`Move-` anywhere in the engine.
-- **Scopes/SAS:** only read scopes are requested; SAS accepted only with read+list.
+- **Scopes:** only Microsoft Graph read scopes are requested; the data plane uses the signed‑in identity (no SAS, no keys).
 - **Consent banner:** before any call — *"This tool is READ‑ONLY. It enumerates ACLs, groups, and
   memberships. It will NOT create, modify, or delete anything. Continue? (y/N)."*
 - **No remediation code path** exists in Phase 1 — apply logic is deferred to a separate, opt‑in Phase 2.
@@ -268,7 +269,7 @@ decisions into `recommendations.json`, which the dashboard then reflects (approv
 ## 12. Risks & mitigations
 | Risk | Mitigation |
 |---|---|
-| Private‑endpoint ADLS unreachable from a workstation | Runbook documents in‑network/jump‑host placement; SAS option. |
+| Private‑endpoint ADLS unreachable from a workstation | Runbook documents in‑network/jump‑host placement. |
 | Enumeration cost at production scale | Concurrency + backoff + checkpoint/resume + streaming JSONL. |
 | Browser can't render the full estate | Aggregated summaries + drill‑down shards. |
 | Security team wary of a data‑plane tool | Minimal‑dependency auditable PowerShell + documented read‑only allowlist + consent banner. |

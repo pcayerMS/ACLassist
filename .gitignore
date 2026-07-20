@@ -2,7 +2,7 @@
 /data/*
 !/data/.gitkeep
 
-# Local config with real target values / SAS tokens — never commit
+# Local config with real target values — never commit
 /config/config.json
 
 # Node
