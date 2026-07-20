@@ -8,8 +8,8 @@ no remediation.
 1. **Operation allowlist** — the engine may only call the cmdlets in
    [`../engine/ReadOnly.Allowlist.psd1`](../engine/ReadOnly.Allowlist.psd1). All are read/list
    operations (plus client‑side context cmdlets that create only in‑memory objects).
-2. **Read‑only permissions** — only Microsoft Graph *read* scopes are requested; an optional ADLS SAS
-   is accepted only with **read + list** permissions.
+2. **Read‑only permissions** — only Microsoft Graph *read* scopes are requested, and the ADLS data plane
+   is read with the signed‑in identity's **Storage Blob Data Reader** access (interactive OAuth; no account keys, no SAS).
 3. **Consent banner** — every run starts with `../engine/Show-ReadOnlyConsent.ps1`, which states the
    tool is read‑only and requires explicit confirmation before anything is accessed.
 4. **No apply path** — there is no remediation code in Phase 1. Applying an approved model is a

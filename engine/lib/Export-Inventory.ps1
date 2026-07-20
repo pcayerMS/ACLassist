@@ -76,7 +76,7 @@ function Export-Inventory {
                 fileSystem        = $Config.target.fileSystem
                 rootPath          = $Config.target.rootPath
             }
-            auth          = [ordered]@{ mode = $Config.auth.mode; account = $account }
+            auth          = [ordered]@{ mode = 'interactive'; account = $account }
             counts        = [ordered]@{
                 folders         = $AclResult.Folders.Count
                 aces            = $AclResult.AceCount

@@ -75,7 +75,7 @@ diffed, and re‑run offline. Copilot supplies the reasoning; deterministic code
 | **AI on Tab 2** | **GitHub Copilot agent in the repo** produces `recommendations.json` + `proposed-model.xlsx`. | No API keys, portable, "uses the AI power in GHCP." |
 | **Analysis method** | **Hybrid** — deterministic clustering finds candidates + quantifies savings; AI names roles, writes rationale, proposes the model. | Repeatable numbers + human‑readable story. |
 | **User control** | **Excel round‑trip** (`proposed-model.xlsx`) with decision columns; importer merges edits back. | User owns every change; prepares remediation fields without executing them. |
-| **Auth** | Interactive credential **prompt**; **optional read‑only SAS** for the ADLS data plane. | Matches customer requirement; Graph still uses interactive read scopes. |
+| **Auth** | Interactive **sign-in** (Azure + Microsoft Graph); optional saved **UPN login hint**. | No stored secret; needs **Storage Blob Data Reader** for the data plane. |
 | **Prerequisites** | Bootstrapper validates the client and **offers to install** what's missing. | PowerShell 7, required modules, Node LTS. |
 
 ---

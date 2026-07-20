@@ -5,6 +5,20 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-20 — Customer-usable: interactive setup, no hardcoded target
+- **New `engine/Initialize-Config.ps1`** — interactive, READ-ONLY setup that writes `config/config.json`
+  (git-ignored, **local only — never committed**). You type tenant + subscription, then **pick the storage
+  account and container from lists** (resource group auto-derived). Re-runs **propose your previously
+  entered values as defaults** (press Enter to keep each). `Invoke-Scan.ps1` auto-launches it when config
+  is missing/incomplete and gains a **`-Reconfigure`** switch.
+- **No more hardcoded lab target.** `Get-ScanConfig` no longer copies the sample verbatim; it validates and
+  rejects placeholder values. `config.sample.json`, `config.schema.json`, and the demo-data generator are
+  scrubbed to generic placeholders (`<your-…>`, `contoso`) — nothing ships pointing at the lab.
+- **Auth simplified to interactive OAuth only — SAS removed** from the engine, config, and schema (per
+  request). Optional **`auth.loginHint`** (UPN) pre-fills the sign-in; no secret is ever stored.
+- Added `Test-ScanConfigComplete` + BOM-free `Write-JsonFile` helpers. Docs updated (README, RUNBOOK,
+  ARCHITECTURE, SECURITY-READONLY, PLAN).
+
 ## 2026-07-20 — Engine: friendly module preflight
 - **`Assert-EngineModules`** (in `Common.ps1`, called at the start of `Invoke-Scan.ps1`) now verifies the
   read-only `Az.*` / `Microsoft.Graph.*` modules are available **to the current PowerShell edition** before

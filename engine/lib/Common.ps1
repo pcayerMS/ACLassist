@@ -32,8 +32,6 @@ function Write-DataPlaneAccessHint {
        [System.Net.Dns]::GetHostAddresses('$acct.dfs.core.windows.net')    # expect the PE private IP
        [System.Net.Dns]::GetHostAddresses('$acct.blob.core.windows.net')   # ADLS Gen2 may also need a BLOB PE
      ADLS Gen2 commonly needs BOTH 'dfs' and 'blob' private endpoints + matching private DNS zones.
-
-  3) SAS - if auth.mode='sas', ensure the token has read + list and has not expired.
 "@ -ForegroundColor Yellow
 }
 
@@ -42,27 +40,43 @@ function Get-ScanConfig {
     param([Parameter(Mandatory)][string]$Path)
 
     if (-not (Test-Path $Path)) {
-        $sample = Join-Path (Split-Path -Parent $Path) 'config.sample.json'
-        if (Test-Path $sample) {
-            Copy-Item -Path $sample -Destination $Path
-            Write-Host ''
-            Write-Host 'No config/config.json found - created one from config.sample.json.' -ForegroundColor Yellow
-            Write-Host ('  {0}' -f $Path) -ForegroundColor Yellow
-            Write-Host '  Review the target (tenant / subscription / storage account) before scanning a real environment.' -ForegroundColor Yellow
-        }
-        else {
-            throw "Config not found: $Path`nCopy config/config.sample.json to config/config.json and edit it."
-        }
+        throw "Config not found: $Path`nRun the setup first:  ./engine/Initialize-Config.ps1  (it will prompt for your target)."
     }
     $cfg = Get-Content -Path $Path -Raw | ConvertFrom-Json
-    foreach ($section in 'target', 'auth') {
-        if (-not $cfg.$section) { throw "Config is missing the '$section' section." }
-    }
+    if (-not $cfg.target) { throw "Config is missing the 'target' section. Re-run setup: ./engine/Initialize-Config.ps1 -Reconfigure" }
     foreach ($t in 'tenantId', 'subscriptionId', 'storageAccountName', 'fileSystem') {
-        if (-not $cfg.target.$t) { throw "Config value target.$t is required." }
+        $v = $cfg.target.$t
+        if ([string]::IsNullOrWhiteSpace("$v") -or "$v".StartsWith('<')) {
+            throw "Config value target.$t is missing or still a placeholder. Re-run setup: ./engine/Initialize-Config.ps1 -Reconfigure"
+        }
     }
     if (-not $cfg.target.rootPath) { $cfg.target | Add-Member -NotePropertyName rootPath -NotePropertyValue '/' -Force }
+    if (-not $cfg.auth) {
+        $cfg | Add-Member -NotePropertyName auth -NotePropertyValue ([pscustomobject]@{ loginHint = ''; graphScopes = @('Directory.Read.All', 'Group.Read.All', 'GroupMember.Read.All', 'User.Read.All') }) -Force
+    }
     return $cfg
+}
+
+function Test-ScanConfigComplete {
+    # True only when config.json exists, parses, and has real (non-placeholder) required target values.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path)
+    if (-not (Test-Path $Path)) { return $false }
+    try { $cfg = Get-Content -Path $Path -Raw | ConvertFrom-Json } catch { return $false }
+    if (-not $cfg.target) { return $false }
+    foreach ($t in 'tenantId', 'subscriptionId', 'storageAccountName', 'fileSystem') {
+        $v = $cfg.target.$t
+        if ([string]::IsNullOrWhiteSpace("$v") -or "$v".StartsWith('<')) { return $false }
+    }
+    return $true
+}
+
+function Write-JsonFile {
+    # BOM-free UTF-8 JSON write (Windows PowerShell 5.1 '-Encoding utf8' adds a BOM that breaks JSON.parse).
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Path, [Parameter(Mandatory)]$Object, [int]$Depth = 12)
+    $json = $Object | ConvertTo-Json -Depth $Depth
+    [System.IO.File]::WriteAllText($Path, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
 function Invoke-WithRetry {

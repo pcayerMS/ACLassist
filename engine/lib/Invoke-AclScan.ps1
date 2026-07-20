@@ -2,7 +2,7 @@
 <#
   Invoke-AclScan.ps1 — READ-ONLY enumeration of ADLS Gen2 folders + ACLs via the DFS REST API.
   Uses GET (List Paths) + HEAD (getAccessControl) only, authenticated with an Entra OAuth bearer token
-  (Get-AzAccessToken) or a read+list SAS. This avoids the Az.Storage -UseConnectedAccount cmdlet path,
+  (Get-AzAccessToken). This avoids the Az.Storage -UseConnectedAccount cmdlet path,
   yields clean symbolic ACL strings, and can read the filesystem root ACL. Streams ACE records to JSONL.
 #>
 
@@ -26,20 +26,13 @@ function Invoke-AclScan {
 
     Write-ScanLog OK ("ADLS scan (REST) starting: {0} : /{1}" -f $fs, $root)
 
-    # --- auth: OAuth bearer (interactive) or read+list SAS ---
+    # --- auth: OAuth bearer (interactive connected account) ---
     $headers = @{ 'x-ms-version' = $ver }
     $authQ = ''
-    if ($Config.auth.mode -eq 'sas') {
-        if (-not $Config.auth.sasToken) { throw 'auth.mode = sas but auth.sasToken is empty. Provide a read+list SAS.' }
-        $authQ = '&' + $Config.auth.sasToken.TrimStart('?')
-        Write-ScanLog OK 'Data-plane auth: SAS (read/list).'
-    }
-    else {
-        $t = Get-AzAccessToken -ResourceUrl 'https://storage.azure.com'
-        $tok = if ($t.Token -is [securestring]) { [System.Net.NetworkCredential]::new('', $t.Token).Password } else { $t.Token }
-        $headers['Authorization'] = "Bearer $tok"
-        Write-ScanLog OK 'Data-plane auth: OAuth bearer (Get-AzAccessToken).'
-    }
+    $t = Get-AzAccessToken -ResourceUrl 'https://storage.azure.com'
+    $tok = if ($t.Token -is [securestring]) { [System.Net.NetworkCredential]::new('', $t.Token).Password } else { $t.Token }
+    $headers['Authorization'] = "Bearer $tok"
+    Write-ScanLog OK 'Data-plane auth: OAuth bearer (Get-AzAccessToken).'
 
     # Fresh JSONL sink.
     if (Test-Path $AceJsonlPath) { Remove-Item $AceJsonlPath -Force }

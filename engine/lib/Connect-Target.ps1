@@ -9,34 +9,27 @@ function Connect-ScanTarget {
     param([Parameter(Mandatory)]$Config)
 
     $t = $Config.target
+    $acctParam = @{}
+    if ($Config.auth.loginHint) { $acctParam['AccountId'] = $Config.auth.loginHint }
 
-    # --- Azure (interactive sign-in; used for the data plane and RBAC read) ---
+    # --- Azure (interactive sign-in; used for the data-plane token + RBAC read) ---
     $az = Get-AzContext -ErrorAction SilentlyContinue
     if (-not $az) {
         Write-ScanLog INFO 'Signing in to Azure (interactive)...'
-        Connect-AzAccount -Tenant $t.tenantId -Subscription $t.subscriptionId -ErrorAction Stop | Out-Null
+        Connect-AzAccount -Tenant $t.tenantId -Subscription $t.subscriptionId @acctParam -ErrorAction Stop | Out-Null
     }
     try {
         Set-AzContext -Subscription $t.subscriptionId -ErrorAction Stop | Out-Null
     }
     catch {
         Write-ScanLog INFO 'Selecting subscription requires sign-in...'
-        Connect-AzAccount -Tenant $t.tenantId -Subscription $t.subscriptionId -ErrorAction Stop | Out-Null
+        Connect-AzAccount -Tenant $t.tenantId -Subscription $t.subscriptionId @acctParam -ErrorAction Stop | Out-Null
         Set-AzContext -Subscription $t.subscriptionId -ErrorAction Stop | Out-Null
     }
     $az = Get-AzContext
     Write-ScanLog OK ("Azure context: {0}  (sub {1})" -f $az.Account.Id, $t.subscriptionId)
 
-    # --- Storage data-plane context (READ) ---
-    if ($Config.auth.mode -eq 'sas') {
-        if (-not $Config.auth.sasToken) { throw 'auth.mode = sas but auth.sasToken is empty. Provide a read+list SAS.' }
-        $sc = New-AzStorageContext -StorageAccountName $t.storageAccountName -SasToken $Config.auth.sasToken
-        Write-ScanLog OK 'Storage context via SAS (read/list).'
-    }
-    else {
-        $sc = New-AzStorageContext -StorageAccountName $t.storageAccountName -UseConnectedAccount
-        Write-ScanLog OK 'Storage context via OAuth (connected account).'
-    }
+    # Data-plane reads use an OAuth bearer token (Get-AzAccessToken) in Invoke-AclScan - no SAS, no account keys.
 
     # --- Microsoft Graph (READ scopes) ---
     $scopes = @($Config.auth.graphScopes)
@@ -52,7 +45,6 @@ function Connect-ScanTarget {
     Write-ScanLog OK ("Graph context: {0}" -f $mg.Account)
 
     return [pscustomobject]@{
-        StorageContext = $sc
         Account        = $az.Account.Id
         TenantId       = $t.tenantId
         SubscriptionId = $t.subscriptionId

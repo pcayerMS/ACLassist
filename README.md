@@ -29,10 +29,13 @@ powershell -File ./engine/Assert-Prerequisites.ps1
 ```
 
 ## Quick start
-1. Copy `config/config.sample.json` → `config/config.json` and fill in your target (tenant,
-   subscription, storage account, file system). `config/config.json` is git‑ignored.
-2. Run the prerequisite check: `powershell -File ./engine/Assert-Prerequisites.ps1`
-3. *(M1)* Run the scan → produces `data/inventory.json`.
+1. Run the prerequisite check (offers to install any missing modules):
+   `powershell -File ./engine/Assert-Prerequisites.ps1`
+2. **Configure the target** — interactive setup signs you in, lets you pick subscription / storage
+   account / container from lists, and writes the git‑ignored `config/config.json` (re‑runs propose your
+   previous answers as defaults): `pwsh -File ./engine/Initialize-Config.ps1`
+3. *(M1)* Run the scan → produces `data/inventory.json`: `pwsh -File ./engine/Invoke-Scan.ps1`
+   *(auth is interactive OAuth only — no SAS or keys; if no config exists, the scan launches setup first.)*
 4. **Dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/inventory.json`
    (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + filterable tables; click a KPI card
    to jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.

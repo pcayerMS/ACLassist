@@ -10,31 +10,32 @@ powershell -File ./engine/Assert-Prerequisites.ps1   # or: pwsh ./engine/Assert-
 Checks the required `Az.*` / `Microsoft.Graph.*` modules and offers to install any that are missing
 (current‑user PowerShell modules only — no winget, no Node). Add `-AssumeYes` to install without prompts.
 
-## 2. Configure the target
-Copy the sample and edit it (your copy is git‑ignored):
+## 2. Configure the target  *(interactive)*
+Run the setup — it signs you in, lets you **pick** the target from lists, and writes
+`config/config.json` (git‑ignored, local only). Re‑running proposes your previous answers as defaults
+(press Enter to keep each one):
 ```powershell
-Copy-Item ./config/config.sample.json ./config/config.json
+pwsh -File ./engine/Initialize-Config.ps1     # or: powershell -File ./engine/Initialize-Config.ps1
 ```
-Set `target.tenantId`, `target.subscriptionId`, `target.storageAccountName`, `target.fileSystem`.
-Choose `auth.mode`:
-- `interactive` — you are prompted to sign in (Azure + Microsoft Graph).
-- `sas` — paste a **read + list** SAS into `auth.sasToken` for the ADLS data plane (Graph still uses
-  interactive read scopes for groups/users).
+You type your **tenant** and **subscription**, then choose the **storage account** and **container**
+from lists (the resource group is derived automatically). Auth is **interactive OAuth only** — no SAS,
+no keys, no stored secret; an optional **sign‑in UPN** is remembered as a login hint. Setup also runs
+automatically on the first scan if no config exists; use `Invoke-Scan.ps1 -Reconfigure` to change it later.
 
 **Network:** if the storage account uses a private endpoint, run from a host that can reach it
-(in‑network / jump host) — e.g. the lab VM via Bastion.
+(in‑network / jump host).
 
 ## 3. Confirm read‑only + run the scan  *(M1)*
 ```powershell
-powershell -File ./engine/Invoke-Scan.ps1 -ConfigPath ./config/config.json   # or: pwsh ./engine/Invoke-Scan.ps1
+pwsh -File ./engine/Invoke-Scan.ps1        # or: powershell -File ./engine/Invoke-Scan.ps1
 ```
-Shows the read‑only consent banner, signs in (or uses the SAS), enumerates folders + ACLs + groups +
+Shows the read‑only consent banner, signs in, enumerates folders + ACLs + groups +
 memberships + users + existing RBAC, and writes `data/inventory.json` (+ `data/inventory.jsonl`).
+(If no config exists yet, the scan launches the setup from step 2 first.)
 
 **Identity:** the scan reads ACLs across the whole lake, so sign in with an identity that has
-data‑plane read everywhere — **Storage Blob Data Reader/Owner** (in the lab, `admin@…`) or a
-read+list SAS — plus Microsoft Graph directory read. The lab *guest* only sees the Finance slice, so
-use `admin@…` for a full inventory.
+data‑plane read everywhere — **Storage Blob Data Reader/Owner** — plus Microsoft Graph directory read.
+An identity scoped to only part of the lake produces a partial inventory.
 
 **Expected on first run (lab):** the ADLS pass is quick (~390 folders); the Graph pass enumerates
 members for ~2,312 groups **one at a time**, which takes several minutes (batching is an M6

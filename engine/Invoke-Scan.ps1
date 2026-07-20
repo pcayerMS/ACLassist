@@ -7,7 +7,7 @@
 .DESCRIPTION
     Orchestrates the M1 pipeline:
       1. Load config + show the read-only consent banner.
-      2. Connect (interactive sign-in, or SAS for the ADLS data plane).
+      2. Connect (interactive sign-in to Azure + Microsoft Graph).
       3. Scan ADLS folders + ACLs  -> streams ACE records to data/inventory.jsonl.
       4. Scan Entra groups + members + users + existing RBAC.
       5. Assemble data/inventory.json.
@@ -24,7 +24,8 @@
 [CmdletBinding()]
 param(
     [string]$ConfigPath,
-    [switch]$AssumeYes
+    [switch]$AssumeYes,
+    [switch]$Reconfigure
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,9 +40,16 @@ $repoRoot = Split-Path -Parent $here
 . "$here/Show-ReadOnlyConsent.ps1"
 
 if (-not $ConfigPath) { $ConfigPath = Join-Path $repoRoot 'config/config.json' }
-$cfg = Get-ScanConfig -Path $ConfigPath
 
 Assert-EngineModules   # fail early + clearly if Az/Graph modules are missing for this PowerShell edition
+
+# First run (or -Reconfigure): interactively capture the target into config/config.json (git-ignored, local only).
+if ($Reconfigure -or -not (Test-ScanConfigComplete -Path $ConfigPath)) {
+    if ($Reconfigure) { Write-Host 'Reconfiguring target...' -ForegroundColor Cyan }
+    else { Write-Host 'No complete config/config.json found - starting interactive setup...' -ForegroundColor Cyan }
+    & (Join-Path $here 'Initialize-Config.ps1') -ConfigPath $ConfigPath
+}
+$cfg = Get-ScanConfig -Path $ConfigPath
 
 Write-Host ''
 Write-Host ('Target : {0} / {1}' -f $cfg.target.storageAccountName, $cfg.target.fileSystem) -ForegroundColor Cyan

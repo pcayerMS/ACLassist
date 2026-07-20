@@ -1,15 +1,14 @@
 {
   "target": {
-    "tenantId": "MngEnvMCAP272021.onmicrosoft.com",
-    "subscriptionId": "50dc9596-2592-474a-a767-2dd56e6c9996",
-    "resourceGroupName": "rg-lab1-adlsacl-cac",
-    "storageAccountName": "stlab1adlsaclcac",
-    "fileSystem": "adls-aircanada",
+    "tenantId": "<your-entra-tenant-id-or-domain>",
+    "subscriptionId": "<your-subscription-id>",
+    "resourceGroupName": "",
+    "storageAccountName": "<your-adls-gen2-account>",
+    "fileSystem": "<your-container>",
     "rootPath": "/"
   },
   "auth": {
-    "mode": "interactive",
-    "sasToken": "",
+    "loginHint": "",
     "graphScopes": [
       "Directory.Read.All",
       "Group.Read.All",
@@ -18,7 +17,7 @@
     ]
   },
   "groups": {
-    "namePrefixes": ["ADLS_", "PRD_"],
+    "namePrefixes": [],
     "expandTransitiveMembership": true
   },
   "scan": {

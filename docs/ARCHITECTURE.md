@@ -9,7 +9,7 @@ PowerShell engine. Everything else operates on local JSON files and never touche
 ```mermaid
 flowchart LR
     subgraph AZ["PowerShell engine — READ-ONLY, Azure-facing"]
-        B[Connect: interactive OR read SAS] --> C[Scan ADLS ACLs + Entra groups/members]
+        B[Connect: interactive sign-in] --> C[Scan ADLS ACLs + Entra groups/members]
         C --> D[(inventory.json)]
     end
     subgraph OFF["Node / TS — offline"]

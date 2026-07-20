@@ -23,10 +23,8 @@
     "auth": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["mode"],
       "properties": {
-        "mode": { "type": "string", "enum": ["interactive", "sas"], "description": "interactive = sign-in prompt; sas = read+list SAS for the ADLS data plane." },
-        "sasToken": { "type": "string", "description": "Read+list SAS token; used only when mode = sas. Real values belong only in the git-ignored config.json." },
+        "loginHint": { "type": "string", "description": "Optional UPN to pre-fill the interactive sign-in (e.g. admin@contoso.com). Interactive OAuth only - no secret is stored." },
         "graphScopes": {
           "type": "array",
           "items": { "type": "string" },
