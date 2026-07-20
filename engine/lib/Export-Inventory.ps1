@@ -30,7 +30,7 @@ function Export-Inventory {
     # Classify each group by its OBSERVED function (naming-independent) and effective-access liveness.
     $groupsOut = New-Object System.Collections.Generic.List[object]
     $orphanGroups = New-Object System.Collections.Generic.List[object]
-    $nAccess = 0; $nHybrid = 0; $nRole = 0; $nUnused = 0; $nUnreachable = 0
+    $nAccess = 0; $nHybrid = 0; $nRole = 0; $nUnused = 0; $nDormant = 0
     foreach ($g in $GraphResult.Groups) {
         $onAce = $referenced.ContainsKey($g.Id)
         $mc = 0; if ($memberCount.ContainsKey($g.Id)) { $mc = $memberCount[$g.Id] }
@@ -40,7 +40,7 @@ function Export-Inventory {
         $role = Get-GroupRole -OnAce $onAce -HasMembers $hasMem
         $status = Get-GroupStatus -Role $role -OnAce $onAce -Reachable $rch
         switch ($role) { 'access' { $nAccess++ } 'hybrid' { $nHybrid++ } 'role' { $nRole++ } 'unused' { $nUnused++ } }
-        if ($status -eq 'unreachable') { $nUnreachable++ }
+        if ($status -eq 'dormant') { $nDormant++ }
         $groupsOut.Add([pscustomobject]@{
             id              = $g.Id
             displayName     = $g.DisplayName
@@ -87,12 +87,12 @@ function Export-Inventory {
                 rbacAssignments = $GraphResult.Rbac.Count
                 accessGroups    = $nAccess + $nHybrid
                 roleGroups      = $nRole
-                unreachableGroups = $nUnreachable
+                dormantGroups   = $nDormant
                 orphanGroups    = $orphanGroups.Count
                 staleUsers      = @($staleUsers).Count
             }
             notes         = @(
-                'READ-ONLY snapshot. Groups carry a behavioural role (access/role/hybrid/unused) and an effective-access status (active/unreachable/unused).',
+                'READ-ONLY snapshot. Groups carry a behavioural role (access/role/hybrid/unused) and an effective-access status (active/dormant/unused).',
                 'Container root "/" ACL IS captured (read via the DFS REST getAccessControl call).'
             )
         }

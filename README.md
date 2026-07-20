@@ -69,5 +69,5 @@ clickable KPI cards, and Group‑nesting / Memberships / Storage‑roles sub‑t
 analyzer (`analyzer/Invoke-Analysis.ps1` → `data/analysis.json`)** ✅.
 
 **Behavioural group model** — groups are labelled by *observed function* (access / role / hybrid / unused)
-with an effective-access **status** (active / **unreachable** / unused), naming-independent so it works for
+with an effective-access **status** (active / **dormant** / unused), naming-independent so it works for
 any customer ✅.

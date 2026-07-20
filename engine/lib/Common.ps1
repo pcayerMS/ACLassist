@@ -248,10 +248,10 @@ function Get-GroupRole {
 }
 
 function Get-GroupStatus {
-    # Effective-access-aware liveness. 'unreachable' = carries a folder grant but no user reaches it.
+    # Effective-access-aware liveness. 'dormant' = carries a folder grant but no user reaches it.
     param([string]$Role, [bool]$OnAce, [bool]$Reachable)
     if ($Role -eq 'unused') { return 'unused' }
-    if ($OnAce -and -not $Reachable) { return 'unreachable' }
+    if ($OnAce -and -not $Reachable) { return 'dormant' }
     return 'active'
 }
 

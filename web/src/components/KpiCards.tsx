@@ -6,9 +6,9 @@ function pct(n: number, d: number) { return d ? Math.round((n / d) * 100) : 0; }
 
 export function KpiCards({ inv, onNavigate }: { inv: Inventory; onNavigate: (t: KpiTarget) => void }) {
   const c = inv.meta.counts;
-  const unreachable = c.unreachableGroups ?? c.orphanGroups ?? 0;
+  const dormant = c.dormantGroups ?? c.unreachableGroups ?? c.orphanGroups ?? 0;
   const accessBase = c.accessGroups ?? c.groups ?? 0;
-  const unreachablePct = pct(unreachable, accessBase);
+  const dormantPct = pct(dormant, accessBase);
   const avgAces = c.folders ? (c.aces / c.folders).toFixed(1) : '0';
 
   const cards: { label: string; value: number; sub: string; warn?: boolean; target: KpiTarget }[] = [
@@ -16,7 +16,7 @@ export function KpiCards({ inv, onNavigate }: { inv: Inventory; onNavigate: (t: 
     { label: 'ACL entries', value: c.aces ?? 0, sub: `${avgAces} avg / folder`, target: { sub: 'folders' } },
     { label: 'Groups', value: c.groups ?? 0, sub: 'Entra security groups', target: { sub: 'groups' } },
     { label: 'Users', value: c.users ?? 0, sub: 'in-scope principals', target: { sub: 'users' } },
-    { label: 'Unreachable', value: unreachable, sub: `${unreachablePct}% of access groups`, warn: unreachablePct > 50, target: { sub: 'groups', filter: { col: 'status', val: 'unreachable' } } },
+    { label: 'Dormant', value: dormant, sub: `${dormantPct}% of access groups`, warn: dormantPct > 50, target: { sub: 'groups', filter: { col: 'status', val: 'dormant' } } },
     { label: 'Group nesting', value: c.groupNesting ?? 0, sub: 'parent → child edges', target: { sub: 'nesting' } },
     { label: 'Memberships', value: c.memberships ?? 0, sub: 'user → group edges', target: { sub: 'memberships' } },
     { label: 'Storage roles', value: c.rbacAssignments ?? 0, sub: 'Azure RBAC on the account', target: { sub: 'rbac' } },

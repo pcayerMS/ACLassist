@@ -7,6 +7,7 @@ export interface Column<T> {
   value: (row: T) => string | number;
   render?: (row: T) => ReactNode;
   filter?: 'text' | 'select' | 'none';
+  help?: string;
 }
 
 interface Props<T> {
@@ -109,8 +110,8 @@ export function DataTable<T>({ rows, columns, exportName = 'export', initialFilt
           <thead>
             <tr>
               {columns.map((c) => (
-                <th key={c.key} className="sortable" onClick={() => toggleSort(c.key)}>
-                  {c.header}<span className="sort-ind">{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}</span>
+                <th key={c.key} className={'sortable' + (c.help ? ' has-help' : '')} title={c.help} onClick={() => toggleSort(c.key)}>
+                  <span className="th-label">{c.header}</span><span className="sort-ind">{sort?.key === c.key ? (sort.dir === 1 ? ' ▲' : ' ▼') : ''}</span>
                 </th>
               ))}
             </tr>

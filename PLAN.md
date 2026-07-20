@@ -155,12 +155,12 @@ acl-reporting/
 - **Entra groups:** all `ADLS_*` and `PRD_*` (and any others in scope), **nesting**, and **transitive
   (effective) membership**.
 - **Users:** memberships (direct + effective), job role, enabled/disabled.
-- **Hygiene / liveness:** per-group effective-access `status` (active / unreachable / unused), duplicate-grant groups, stale/disabled users.
+- **Hygiene / liveness:** per-group effective-access `status` (active / dormant / unused), duplicate-grant groups, stale/disabled users.
 
 ### 6.4 Inventory data model (`inventory.json`)
 Normalized entities with stable IDs so the analyzer and dashboard can join them:
 - `folders[]` (path, depth, dept/area/layer/project, sensitivity)
-- `groups[]` (name, objectId, naming kind: ADLS|PRD|other, **role**: access|role|hybrid|unused, **status**: active|unreachable|unused, onAce, memberCount, reachable, nestedInto[])
+- `groups[]` (name, objectId, naming kind: ADLS|PRD|other, **role**: access|role|hybrid|unused, **status**: active|dormant|unused, onAce, memberCount, reachable, nestedInto[])
 - `users[]` (upn, objectId, jobRole, enabled, groupIds[])
 - `aces[]` (folderId, principalId, principalType, permission r/w/x, aclType access|default)
 - `rbacAssignments[]` (principalId, role, scope) — expected empty
@@ -204,7 +204,7 @@ decisions into `recommendations.json`, which the dashboard then reflects (approv
   permission, sensitivity, orphaned/stale).
 - **Map:** interactive, **aggregated with drill‑down** for scale — hierarchy treemap/icicle, a
   group×scope **heatmap**, and group→folder→user relationships.
-- **KPIs:** # folders, # groups, # users, # ACEs, avg ACEs/folder, # unreachable groups, sprawl index.
+- **KPIs:** # folders, # groups, # users, # ACEs, avg ACEs/folder, # dormant groups, sprawl index.
 
 **Tab 2 — Proposition (secondary):**
 - Findings: redundant groups, personas, consolidation opportunities, **quantified savings**.

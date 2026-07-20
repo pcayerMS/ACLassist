@@ -5,6 +5,15 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-20 — Status renamed to "dormant" + column tooltips
+- **Renamed the group `status` value `unreachable` → `dormant`** across the engine, sample generator,
+  dashboard, and docs. "Unreachable" read like a system/network error; **dormant** better conveys "on a
+  folder ACL but nobody effectively has it." The KPI card and `meta.counts.dormantGroups` follow suit (the
+  dashboard still falls back to the old `unreachableGroups` key for older inventories), and the tag is now
+  **amber** instead of red.
+- **Column header tooltips** — every inventory table column now has a hover `title` explaining what it is
+  (a dotted underline hints it); added an optional `help` field to the table `Column` type.
+
 ## 2026-07-20 — Customer-usable: interactive setup, no hardcoded target
 - **New `engine/Initialize-Config.ps1`** — interactive, READ-ONLY setup that writes `config/config.json`
   (git-ignored, **local only — never committed**). You type tenant + subscription, then **pick the storage
