@@ -5,6 +5,14 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-20 — Engine: friendly module preflight
+- **`Assert-EngineModules`** (in `Common.ps1`, called at the start of `Invoke-Scan.ps1`) now verifies the
+  read-only `Az.*` / `Microsoft.Graph.*` modules are available **to the current PowerShell edition** before
+  the scan runs. A missing module now throws an actionable message ("run `Assert-Prerequisites.ps1`, or use
+  `pwsh`") instead of the cryptic `Get-AzContext is not recognized` — the failure seen when running the scan
+  under Windows PowerShell 5.1 on a VM where Az is only installed for PowerShell 7. Also imports the
+  entry-point modules so cmdlet auto-loading is guaranteed.
+
 ## 2026-07-17 — Behavioural group classification + effective-access-aware status
 - **`kind` (name prefix) is no longer the semantic driver.** Each group now carries a naming-independent
   **`role`** — `access` (on a folder ACL), `role` (aggregates members), `hybrid` (both), `unused` (neither) —

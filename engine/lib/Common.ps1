@@ -241,6 +241,27 @@ function Get-GroupStatus {
     return 'active'
 }
 
+function Assert-EngineModules {
+    # Verifies the read-only Azure/Graph modules are available to THIS PowerShell edition, so a missing
+    # module fails with an actionable message instead of a cryptic 'Get-AzContext is not recognized'.
+    $required = @('Az.Accounts', 'Az.Storage', 'Az.Resources',
+        'Microsoft.Graph.Authentication', 'Microsoft.Graph.Groups', 'Microsoft.Graph.Users')
+    $missing = @()
+    foreach ($m in $required) {
+        if (-not (Get-Module -ListAvailable -Name $m)) { $missing += $m }
+    }
+    if ($missing.Count -gt 0) {
+        $edition = 'PowerShell {0} ({1})' -f $PSVersionTable.PSVersion, $PSVersionTable.PSEdition
+        $msg = 'Required module(s) not installed for this {0} session: {1}.' -f $edition, ($missing -join ', ')
+        $msg += "`n  Fix: run  powershell -File ./engine/Assert-Prerequisites.ps1  (installs them for this edition),"
+        $msg += "`n  or run the scan under the edition where they ARE installed, e.g.  pwsh -File ./engine/Invoke-Scan.ps1"
+        throw $msg
+    }
+    # Load the entry-point modules so cmdlet auto-loading is guaranteed for the rest of the run.
+    Import-Module Az.Accounts -ErrorAction Stop | Out-Null
+    Import-Module Microsoft.Graph.Authentication -ErrorAction Stop | Out-Null
+}
+
 function Write-Jsonl {
     param(
         [Parameter(Mandatory)][string]$Path,
