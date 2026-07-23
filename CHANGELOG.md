@@ -5,6 +5,15 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-23 — M5: Proposition rendered as dashboard Tab 2
+- **Tab 2 (Proposition)** now renders `data/recommendations.json`: savings cards (groups today → proposed
+  roles, groups retired, % reduction), a **before → after** summary, a "you are in control / nothing is
+  applied" note, the key findings, and the full **proposed‑roles** table (filter / sort / Excel export) with
+  the **Decision** column.
+- Loads `recommendations.json` via its own drag‑drop / file picker (works on `file://`), mirroring the
+  inventory loader. Added `loadRecommendations()` + `Recommendations` types; `copy-inventory.mjs` now also
+  syncs `recommendations.json` into `web/public` for dev/preview. Single‑file dashboard ~245 KB.
+
 ## 2026-07-23 — M4: AI proposition (GHCP) + Excel round-trip
 - **`ai/prompts/assess.prompt.md`** — a GitHub Copilot prompt (READ-ONLY, in-repo) that reads
   `data/analysis.json`, names each proposed role, maps it to an Azure built-in data-plane role, writes the

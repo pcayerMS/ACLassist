@@ -55,7 +55,7 @@ export default function App() {
           <FileLoader onLoad={handleInventory} onError={handleError} error={err} />
         )}
         {status === 'ready' && inv && tab === 'inventory' && <InventoryTab inv={inv} />}
-        {status === 'ready' && inv && tab === 'proposition' && <PropositionTab inv={inv} />}
+        {status === 'ready' && inv && tab === 'proposition' && <PropositionTab />}
       </main>
 
       {status === 'ready' && inv && (

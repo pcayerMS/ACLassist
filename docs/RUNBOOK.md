@@ -79,8 +79,16 @@ data‑plane role, writes the rationale, and emits `data/recommendations.json` (
 cd web && node scripts/build-proposal-xlsx.mjs   # -> data/proposed-model.xlsx
 ```
 Open `data/proposed-model.xlsx`, review each proposed role, and set **Decision = Approve / Modify / Reject**.
-Nothing is applied — remediation is a later phase. *(Rendering this as Tab 2 in the dashboard is M5.)*
+Nothing is applied — remediation is a later phase.
+
+## 7. View the proposition — dashboard Tab 2  *(M5)*
+Open `dashboard/ACLassist.html` (load your `data/inventory.json` first if you haven't), then click the
+**2 · Proposition** tab and load your `data/recommendations.json` (drag‑and‑drop or file picker). Tab 2 shows
+the savings (groups today → proposed roles, groups retired, % reduction), the **before → after** summary, and
+the full **proposed‑roles** table (filter / sort / Excel export). The **Decision** column reflects
+`data/recommendations.json`; you make the actual calls in `data/proposed-model.xlsx` (folding those edits back
+into the dashboard is a small follow‑up). Everything runs locally — nothing is uploaded, and **nothing is applied**.
 
 ---
-*M0 scaffold + safety · M1 read‑only scan · M2 single‑file dashboard · M3 offline analyzer (above).
+*M0 scaffold + safety · M1 read‑only scan · M2 dashboard Tab 1 · M3 analyzer · M4 AI proposition · M5 Tab 2 (above).
 M4–M5 (AI proposition + Tab 2) are next.*

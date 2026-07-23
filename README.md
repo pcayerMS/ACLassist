@@ -43,7 +43,10 @@ powershell -File ./engine/Assert-Prerequisites.ps1
    groups, personas, role‑collapse model, quantified savings).
 6. *(M4)* **AI proposition** — in VS Code + GitHub Copilot, run `ai/prompts/assess.prompt.md`. Copilot reads
    `data/analysis.json`, names the roles + writes rationale into `data/recommendations.json`, then builds
-   `data/proposed-model.xlsx` (editable, with an **Approve / Modify / Reject** column). *(Tab 2 render = M5.)*
+   `data/proposed-model.xlsx` (editable, with an **Approve / Modify / Reject** column).
+7. *(M5)* **Proposition (Tab 2):** in `dashboard/ACLassist.html`, open the **2 · Proposition** tab and load
+   `data/recommendations.json` — savings, before→after, and the proposed‑roles table. Make decisions in the
+   Excel. **Nothing is applied.**
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
@@ -77,4 +80,6 @@ any customer ✅.
 **M4 — AI proposition (GHCP)** — a Copilot prompt (`ai/prompts/assess.prompt.md`) turns `analysis.json`
 into a schema-validated `recommendations.json` + an editable `proposed-model.xlsx`
 (Approve / Modify / Reject); on the sample it proposes **18 roles** from 2,312 groups (~99%). ✅
-*(Tab 2 render = M5, next.)*
+
+**M5 — Proposition (Tab 2)** — the dashboard renders `recommendations.json`: savings cards, a before→after
+summary, and the filterable / exportable proposed‑roles table with the Decision column. ✅

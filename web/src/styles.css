@@ -145,4 +145,22 @@ th.sortable:hover { color: var(--text); }
 .view-note.info { background: #10261b; border: 1px solid #1f5138; color: #cfe9d8; padding: 10px 14px; border-radius: 8px; }
 .view-note.info .mono { color: #8ef0bd; }
 
+/* Tab 2 — proposition */
+.kpi-good .kpi-value { color: #8ef0bd; }
+.beforeafter { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px 20px; margin: 4px 0 14px; }
+.ba-side { text-align: center; }
+.ba-num { font-size: 30px; font-weight: 700; line-height: 1; }
+.ba-cap { color: var(--muted); font-size: 12px; margin-top: 4px; }
+.ba-after .ba-num { color: #8ef0bd; }
+.ba-arrow { font-size: 26px; color: var(--accent-2); }
+.ba-headline { margin-left: auto; color: var(--text); font-size: 13.5px; font-weight: 600; max-width: 46ch; }
+.findings { margin-top: 18px; }
+.findings h3 { font-size: 14px; margin: 0 0 8px; }
+.findings ul { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 6px; }
+.findings li { color: var(--muted); font-size: 12.5px; line-height: 1.5; }
+.sev { display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase; padding: 1px 6px; border-radius: 4px; margin-right: 4px; }
+.sev-high { color: #ffb0b3; background: #2a1418; }
+.sev-medium { color: #ffd79a; background: #2e2413; }
+.sev-info, .sev-low { color: var(--muted); background: #171b24; }
+
 @media (max-width: 900px) { .kpis { grid-template-columns: repeat(2, 1fr); } }

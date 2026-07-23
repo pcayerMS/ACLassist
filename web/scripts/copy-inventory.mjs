@@ -9,7 +9,7 @@ const publicDir = resolve(here, '../public');
 mkdirSync(publicDir, { recursive: true });
 
 let copied = 0;
-for (const name of ['inventory.json', 'inventory.jsonl']) {
+for (const name of ['inventory.json', 'inventory.jsonl', 'recommendations.json']) {
   const src = resolve(here, '../../data', name);
   if (existsSync(src)) {
     copyFileSync(src, resolve(publicDir, name));

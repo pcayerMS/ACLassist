@@ -71,3 +71,26 @@ export interface Inventory {
   hygiene: { orphanGroups: OrphanGroup[]; staleUsers: User[] };
   aceJsonl?: string;
 }
+
+// --- Tab 2: AI proposition (mirrors ai/recommendations.schema.json) ---
+export interface RecRole {
+  id: string;
+  displayName: string;
+  scope: string;
+  accessLevel: string;
+  azureRole: string;
+  folderScope: string;
+  replacesGroupCount: number;
+  replacesGroupsSample?: string[];
+  suggestedMembers?: string[];
+  rationale: string;
+  confidence: string;
+  decision?: string;
+}
+export interface RecFinding { id: string; severity: string; title: string; detail: string }
+export interface Recommendations {
+  meta: { tool: string; phase: number; generatedUtc: string; source: string; author?: string; notes?: string[] };
+  summary: { currentGroups: number; proposedRoleCount: number; groupsEliminated: number; reductionPct: number; headline?: string };
+  roles: RecRole[];
+  findings?: RecFinding[];
+}
