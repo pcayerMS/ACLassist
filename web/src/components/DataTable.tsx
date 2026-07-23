@@ -74,13 +74,12 @@ export function DataTable<T>({ rows, columns, exportName = 'export', initialFilt
 
   async function doExport(which: 'filtered' | 'all') {
     const data = which === 'filtered' ? filtered : rows;
-    const schema = columns.map((c) => ({
-      column: c.header,
-      type: String,
-      value: (r: T) => { const v = c.value(r); return v === null || v === undefined ? '' : String(v); },
+    const xlsxColumns = columns.map((c) => ({
+      header: c.header,
+      cell: (r: T) => { const v = c.value(r); return v === null || v === undefined ? '' : String(v); },
     }));
-    const write = writeXlsxFile as unknown as (d: unknown, o: unknown) => Promise<void>;
-    await write(data, { schema, fileName: `aclassist-${exportName}.xlsx` });
+    const write = writeXlsxFile as unknown as (d: unknown, o: unknown) => { toFile: (name: string) => Promise<void> };
+    await write(data, { columns: xlsxColumns }).toFile(`aclassist-${exportName}.xlsx`);
   }
 
   return (

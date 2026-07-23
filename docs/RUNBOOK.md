@@ -70,9 +70,16 @@ Reads `data/inventory.json` (+ `data/inventory.jsonl`) **offline** and writes `d
 duplicate‑grant groups, orphan/empty groups, user **personas** (by effective access), a mechanical
 role‑collapse model (per department × access level), and **quantified savings**. No Azure, no new install.
 
-## 6. AI proposition  *(M4–M5, next)*
-In VS Code + GitHub Copilot, run `ai/prompts/assess.prompt.md` — Copilot reads `analysis.json`, names the
-roles, writes the rationale, and produces `data/recommendations.json` + the editable Excel for Tab 2.
+## 6. AI proposition  *(M4)*
+In VS Code with GitHub Copilot, run the prompt [`ai/prompts/assess.prompt.md`](../ai/prompts/assess.prompt.md).
+Copilot reads `data/analysis.json` (READ‑ONLY — no Azure), names each role, maps it to an Azure built‑in
+data‑plane role, writes the rationale, and emits `data/recommendations.json` (validated against
+`ai/recommendations.schema.json`). It then builds the editable workbook:
+```powershell
+cd web && node scripts/build-proposal-xlsx.mjs   # -> data/proposed-model.xlsx
+```
+Open `data/proposed-model.xlsx`, review each proposed role, and set **Decision = Approve / Modify / Reject**.
+Nothing is applied — remediation is a later phase. *(Rendering this as Tab 2 in the dashboard is M5.)*
 
 ---
 *M0 scaffold + safety · M1 read‑only scan · M2 single‑file dashboard · M3 offline analyzer (above).

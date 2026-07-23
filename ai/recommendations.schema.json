@@ -1,0 +1,73 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://acl-reporting/recommendations.schema.json",
+  "title": "ACLassist RBAC recommendations",
+  "description": "AI-authored proposition: consolidate ADLS ACL groups into an RBAC-style role model. DATA ONLY - the customer approves/modifies/rejects each role in Excel. READ-ONLY assessment; nothing is applied (remediation is a later phase).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["meta", "summary", "roles"],
+  "properties": {
+    "meta": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["tool", "phase", "generatedUtc", "source"],
+      "properties": {
+        "tool": { "type": "string" },
+        "phase": { "type": "integer" },
+        "generatedUtc": { "type": "string", "description": "ISO-8601 UTC timestamp." },
+        "source": { "type": "string", "description": "The analysis.json this proposition is derived from." },
+        "author": { "type": "string", "description": "Who generated it, e.g. 'GitHub Copilot (GHCP)'." },
+        "notes": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["currentGroups", "proposedRoleCount", "groupsEliminated", "reductionPct"],
+      "properties": {
+        "currentGroups": { "type": "integer" },
+        "proposedRoleCount": { "type": "integer" },
+        "groupsEliminated": { "type": "integer" },
+        "reductionPct": { "type": "number" },
+        "headline": { "type": "string", "description": "One-line summary of the savings." }
+      }
+    },
+    "roles": {
+      "type": "array",
+      "description": "One proposed RBAC-style role per analysis.json.proposedRoles entry.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "displayName", "scope", "accessLevel", "azureRole", "folderScope", "replacesGroupCount", "rationale", "confidence", "decision"],
+        "properties": {
+          "id": { "type": "string", "description": "Technical role id, e.g. RBAC_Commercial_Reader." },
+          "displayName": { "type": "string", "description": "Friendly name shown to reviewers." },
+          "scope": { "type": "string", "description": "Department / domain the role covers." },
+          "accessLevel": { "type": "string", "enum": ["Reader", "Contributor", "Owner"] },
+          "azureRole": { "type": "string", "description": "Suggested Azure built-in data-plane role." },
+          "folderScope": { "type": "string", "description": "Path prefix the role applies to, e.g. /Commercial." },
+          "replacesGroupCount": { "type": "integer", "description": "Existing per-folder groups this role consolidates." },
+          "replacesGroupsSample": { "type": "array", "items": { "type": "string" }, "description": "A few example group names being consolidated (context only)." },
+          "suggestedMembers": { "type": "array", "items": { "type": "string" }, "description": "Personas / job titles that map to this role." },
+          "rationale": { "type": "string", "description": "Why this role, in plain language." },
+          "confidence": { "type": "string", "enum": ["low", "medium", "high"] },
+          "decision": { "type": "string", "enum": ["", "Approve", "Modify", "Reject"], "description": "Filled in by the reviewer (in Excel). Empty = undecided." }
+        }
+      }
+    },
+    "findings": {
+      "type": "array",
+      "description": "Key findings carried over from analysis.json for context.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "type": "string" },
+          "title": { "type": "string" },
+          "detail": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -5,6 +5,20 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-23 — M4: AI proposition (GHCP) + Excel round-trip
+- **`ai/prompts/assess.prompt.md`** — a GitHub Copilot prompt (READ-ONLY, in-repo) that reads
+  `data/analysis.json`, names each proposed role, maps it to an Azure built-in data-plane role, writes the
+  rationale, and emits `data/recommendations.json`.
+- **`ai/recommendations.schema.json`** — the JSON contract the output must satisfy (roles, savings, and a
+  per-role `decision`).
+- **`web/scripts/build-proposal-xlsx.mjs`** (`npm run build-proposal`) — deterministic builder that turns
+  `recommendations.json` into `data/proposed-model.xlsx` with an **Approve / Modify / Reject** column — the
+  customer's editable round-trip. The AI does the reasoning (JSON); code writes the sheet.
+- On the sample: **2,312 groups → 18 roles (~99%)**, one per department × access level.
+- **Fixed a latent bug:** the Phase A dashboard Excel export used the removed `write-excel-file`
+  `schema`/`fileName` API and never actually exported. Both the dashboard and the new builder now use the
+  4.x `writeXlsxFile(objects, { columns }).toFile(name)` API (verified: export generates a valid xlsx blob).
+
 ## 2026-07-20 — Status renamed to "dormant" + column tooltips
 - **Renamed the group `status` value `unreachable` → `dormant`** across the engine, sample generator,
   dashboard, and docs. "Unreachable" read like a system/network error; **dormant** better conveys "on a

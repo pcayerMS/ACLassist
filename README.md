@@ -41,7 +41,9 @@ powershell -File ./engine/Assert-Prerequisites.ps1
    to jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.
 5. **Analyze:** `powershell -File ./analyzer/Invoke-Analysis.ps1` → `data/analysis.json` (duplicate
    groups, personas, role‑collapse model, quantified savings).
-6. *(M4–M5)* Run the Copilot assessment → Tab 2 proposition + editable Excel.
+6. *(M4)* **AI proposition** — in VS Code + GitHub Copilot, run `ai/prompts/assess.prompt.md`. Copilot reads
+   `data/analysis.json`, names the roles + writes rationale into `data/recommendations.json`, then builds
+   `data/proposed-model.xlsx` (editable, with an **Approve / Modify / Reject** column). *(Tab 2 render = M5.)*
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
@@ -71,3 +73,8 @@ analyzer (`analyzer/Invoke-Analysis.ps1` → `data/analysis.json`)** ✅.
 **Behavioural group model** — groups are labelled by *observed function* (access / role / hybrid / unused)
 with an effective-access **status** (active / **dormant** / unused), naming-independent so it works for
 any customer ✅.
+
+**M4 — AI proposition (GHCP)** — a Copilot prompt (`ai/prompts/assess.prompt.md`) turns `analysis.json`
+into a schema-validated `recommendations.json` + an editable `proposed-model.xlsx`
+(Approve / Modify / Reject); on the sample it proposes **18 roles** from 2,312 groups (~99%). ✅
+*(Tab 2 render = M5, next.)*
