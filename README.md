@@ -1,4 +1,4 @@
-# Air Canada — ADLS ACL → RBAC Assessment Tool
+# ACLassist — ADLS ACL → RBAC Assessment Tool
 
 A **portable, read‑only** tool that inventories an Azure Data Lake Storage Gen2 (ADLS Gen2)
 POSIX‑ACL + Microsoft Entra ID permission structure and uses AI (via GitHub Copilot) to propose a

@@ -62,8 +62,8 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 ## 2026-07-17 — Behavioural group classification + effective-access-aware status
 - **`kind` (name prefix) is no longer the semantic driver.** Each group now carries a naming-independent
   **`role`** — `access` (on a folder ACL), `role` (aggregates members), `hybrid` (both), `unused` (neither) —
-  derived from *observed* facts, so the tool works on **any** customer's naming, not just Air Canada's
-  `ADLS_`/`PRD_`.
+  derived from *observed* facts, so the tool works on **any** customer's naming, not just the
+  `ADLS_`/`PRD_` prefixes.
 - **New effective-access-aware `status`:** `active`, **`unreachable`** (on a folder ACL but **no user is an
   effective member** — a dead grant), or `unused`. Computed via **transitive membership** (engine and sample
   generator share the same reachability walk). This replaces the crude "orphan = empty OR not-on-ACL" test

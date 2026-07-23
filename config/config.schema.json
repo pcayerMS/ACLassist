@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
-  "$id": "https://air-canada/acl-reporting/config.schema.json",
+  "$id": "https://acl-reporting/config.schema.json",
   "title": "ACL assessment configuration",
   "description": "Target + authentication configuration for the READ-ONLY ADLS ACL assessment engine.",
   "type": "object",
