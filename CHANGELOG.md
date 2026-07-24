@@ -5,6 +5,17 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-24 — v2-P1: SQLite data layer + membership metrics (validated)
+- **`engine/sql/schema.sql`** (raw tables + persistent `snapshots` history) and **`engine/sql/analyze.sql`**
+  — containment closure via **recursive CTEs** → per‑user **direct & effective** group counts, per‑group
+  **total nested groups & effective user count**, behavioural role/status, and one history snapshot. Every
+  number is deterministic SQL.
+- **`engine/lib/SqliteDb.ps1`** — dependency‑free driver over the bundled sqlite3.exe: create DB, typed CSV
+  `.import`, run analysis, query (`-json`), plus a BOM‑free RFC4180 CSV writer.
+- **Validated on the sample under Windows PowerShell 5.1**: counts and role/status **match the v1 analyzer
+  exactly** (2,286 dormant / 26 active), and the new membership metrics compute correctly (effective ≥ direct
+  groups per user; per‑group nested/effective‑user counts). DB ~1.6 MB.
+
 ## 2026-07-24 — v2 kickoff: SQLite data platform (provider vendored)
 - **Decision:** move the data store from JSON to **SQLite** as the single source of truth, for scale — real
   estates reach **~11,000 groups per user** via nesting. Full design in [PLAN §13](PLAN.md).
