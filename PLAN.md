@@ -186,6 +186,17 @@ thousands of rows at once).
   proposes the to‑be RBAC‑style model, and produces `recommendations.json` (obeying
   `recommendations.schema.json`) and the editable `proposed-model.xlsx`.
 
+> **TODO (planned — not yet built): cross‑host workflow for Copilot‑less scan hosts.**
+> The scan (M1) and analyzer (M3) run wherever the data lives — often a locked‑down VM / jump host with
+> **no GitHub Copilot** — while the AI step (M4) needs a Copilot‑capable machine. Planned flow: run
+> scan + analyzer on the scan host → copy the small **offline** artifacts (`data/analysis.json`,
+> `data/inventory.json`, `data/inventory.jsonl`) to a workstation that has Copilot → run
+> `ai/prompts/assess.prompt.md` there → carry `data/recommendations.json` (+ `data/proposed-model.xlsx`)
+> back to open in the dashboard. Move the files via **RDP clipboard / drive redirection or Bastion —
+> never git** (`data/` is git‑ignored and must never carry customer ACL data). A small helper to
+> bundle/copy these artifacts — and/or a deterministic **`Invoke-Proposition.ps1`** for fully
+> Copilot‑free environments — is a future add.
+
 ### 6.7 Excel round‑trip — the user is in control
 `proposed-model.xlsx` sheets:
 - **Proposed Roles** — new role, scope, permissions, member count, # groups replaced.
