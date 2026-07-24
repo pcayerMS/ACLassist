@@ -1,12 +1,17 @@
 # ACLassist — ADLS ACL → RBAC Assessment Tool
 
-**Phase 1 plan** · Last updated: 2026-07-15
+**Phase 1 plan** · Last updated: 2026-07-24
 
 > A portable, git‑delivered tool that (1) inventories the *actual* ADLS Gen2 + Entra ID
 > permission/ACL structure and shows it to the customer, and (2) uses AI (via GitHub Copilot in
 > the repo) to propose a simplified, RBAC‑style model — with the **customer in control** of every
 > proposition. **Everything in Phase 1 is strictly READ‑ONLY.** Remediation (actually applying
 > changes) is explicitly a later phase; Phase 1 only *prepares the field* for it.
+
+> **⇢ v2 update (2026‑07‑24, in progress):** data now lives in **SQLite** (single source of truth, no
+> JSON), scan + analyze are **one step**, the tool centres on **membership metrics** (real users reach up to
+> ~11k groups via nesting), and the AI is limited to small, DB‑validated naming. **See §13** — it also
+> carries the still‑pending **M4 / M5 / M6** work forward. Sections 1–12 describe the original v1 design.
 
 ---
 
@@ -286,3 +291,65 @@ decisions into `recommendations.json`, which the dashboard then reflects (approv
 | Security team wary of a data‑plane tool | Minimal‑dependency auditable PowerShell + documented read‑only allowlist + consent banner. |
 | AI proposals not trusted | Deterministic evidence behind every proposal + full user control via Excel; remediation deferred. |
 ```
+
+---
+
+## 13. v2 — SQLite data platform + membership focus  *(in progress, 2026‑07‑24)*
+
+**Why:** real estates are far larger than the lab — users reach **up to ~11,000 groups each** (via nesting).
+JSON snapshots don't scale, and the core customer problem is **over‑membership**. v2 makes SQLite the single
+source of truth, adds membership metrics, unifies the pipeline, and keeps the AI to small, validated naming.
+
+### 13.1 Data store — SQLite (source of truth)
+- One database `data/aclassist.db` (git‑ignored). Replaces the JSON pipeline (`inventory.json` / `analysis.json`).
+- **Provider: bundled `engine/tools/sqlite3.exe`** — the official SQLite CLI, **v3.53.3**, public domain,
+  vendored + hash‑pinned (exe SHA256 `0BF6020E303A1A49DD576BBE259F8C2A05DB689408A2F1F968714F5CF63714AF`;
+  zip SHA3‑256 published by sqlite.org). Portable, no install/admin, identical on Windows PowerShell 5.1 and 7.
+  Overridable via a config `tools.sqlite3Path` if a hardened environment blocks the bundled exe.
+- **Injection‑ and accuracy‑safe by construction:** bulk data is loaded via typed **CSV `.import`** (never
+  string‑built `INSERT`s); all analysis is **fixed SQL** we author. No runtime input shapes any SQL statement.
+- **Effective / transitive metrics via recursive CTEs** (validated) — scales to the 11k‑groups‑per‑user case
+  with indexes; **counts are computed, huge edge lists are not materialised**.
+
+### 13.2 One‑step pipeline
+`engine/Invoke-Assessment.ps1` — a single command: connect (READ‑ONLY) → stream ADLS ACLs + Entra
+groups / members / nesting / users / RBAC → CSV → `.import` into the DB → run the deterministic analysis SQL
+(metrics, clustering, savings) in the DB. (Internal `-SkipScan` re‑runs analysis only.)
+
+### 13.3 Membership metrics (the point of the tool)
+Computed in SQL, shown in the dashboard:
+- **Users:** direct group count **and** effective (transitive) group count.
+- **Groups:** total nested groups (all descendants) **and** effective user count.
+
+### 13.4 Proposition — goal: fewer groups (especially per user)
+Deterministic engine writes candidate reductions to the DB using **all** levers: RBAC‑style roles, retire
+dormant / unreachable groups, merge duplicate groups, flatten unnecessary nesting, and flag / cap users with
+excessive group counts. Every number is quantified against the DB.
+
+### 13.5 AI — tiny, validated, optional
+The AI **never computes facts**. Deterministic code produces the entire factual model in the DB. The AI only
+writes a friendly **name + rationale for one small cluster at a time**; each output is schema‑checked and
+**cross‑verified against the DB** before it is stored (in the DB). Numbers never come from the AI, and the AI
+step is **optional** (deterministic naming fallback). Accuracy guarantee: **100% of numbers are deterministic
+and reproducible**, so there is nothing for the model to hallucinate.
+
+### 13.6 Dashboard
+Still a single self‑contained HTML, but it opens the **`.db` via in‑browser SQLite (sql.js / WASM)** instead
+of JSON — same file‑picker UX. The pipeline precomputes aggregate tables so the browser stays responsive at
+scale and drills down on demand.
+
+### 13.7 Global non‑functional requirement — security
+Every component uses **current, supported, non‑deprecated, injection‑safe** code and dependencies. Bundled
+binaries are pinned by version + hash and sourced from the vendor.
+
+### 13.8 Revised roadmap (carries the pending milestones forward)
+- **v2‑P1 — data platform:** SQLite schema (+ a `scans` snapshot table for history), bundled sqlite3.exe,
+  one‑step `Invoke-Assessment.ps1`, membership metrics, dashboard reads the `.db`.
+- **v2‑P2 — proposition on the DB (rebuilds M4 / M5):** deterministic reduction (all levers) + tiny validated
+  AI naming; Tab 2 + the Excel round‑trip read from the DB.
+- **v2‑P3 — scale hardening (M6):** indexing, batched / streaming import, aggregation, checkpoint / resume,
+  scale test toward the 11k‑groups‑per‑user target.
+- **Future — history tab (Tab 3):** each scan = a timestamped snapshot; trend **total groups, total nested
+  groups, avg & max groups‑per‑user, and total users** over time. *(Plan only — not built.)*
+- **Deferred — cross‑host GHCP workflow** (see §6.6): move offline data from a Copilot‑less scan host to a
+  Copilot workstation for the AI step.

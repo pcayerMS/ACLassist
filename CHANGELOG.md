@@ -5,6 +5,17 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-24 — v2 kickoff: SQLite data platform (provider vendored)
+- **Decision:** move the data store from JSON to **SQLite** as the single source of truth, for scale — real
+  estates reach **~11,000 groups per user** via nesting. Full design in [PLAN §13](PLAN.md).
+- **Vendored `engine/tools/sqlite3.exe`** — the official SQLite CLI **v3.53.3** (public domain), SHA256
+  `0BF6020E303A1A49DD576BBE259F8C2A05DB689408A2F1F968714F5CF63714AF`. Portable, no install/admin, identical on
+  Windows PowerShell 5.1 and 7. Data loads via typed **CSV `.import`** (injection/quoting-safe); effective /
+  nested counts via **recursive CTEs** (validated). Overridable via `tools.sqlite3Path`.
+- **Roadmap** (PLAN §13.8): v2‑P1 data platform + one‑step pipeline + membership metrics → v2‑P2 proposition
+  on the DB (rebuilds M4/M5) → v2‑P3 scale hardening (M6); history tab (Tab 3) planned.
+- Adopted a **global security rule**: current, supported, non‑deprecated, injection‑safe throughout.
+
 ## 2026-07-23 — M5: Proposition rendered as dashboard Tab 2
 - **Tab 2 (Proposition)** now renders `data/recommendations.json`: savings cards (groups today → proposed
   roles, groups retired, % reduction), a **before → after** summary, a "you are in control / nothing is
