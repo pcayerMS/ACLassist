@@ -10,9 +10,12 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
 > performs **no remediation** in Phase 1. See [docs/SECURITY-READONLY.md](docs/SECURITY-READONLY.md).
 
 ## What it produces
-- **Tab 1 — Inventory:** the real ACL/permission structure as filterable, sortable, Excel‑exportable
-  tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles) with clickable KPI cards that
-  jump straight to the relevant pre‑filtered view. *(Interactive map next.)*
+- **`data/aclassist.db`** — a portable SQLite snapshot of the whole environment (folders, groups, users,
+  memberships, group nesting, ACLs, storage roles) plus computed **membership metrics** (effective users per
+  group, transitive nested‑group counts, direct vs. effective groups per user). One file, one scan.
+- **Tab 1 — Inventory:** loads `aclassist.db` and renders the real ACL/permission structure as filterable,
+  sortable, Excel‑exportable tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles) with
+  clickable KPI cards that jump straight to the relevant pre‑filtered view.
 - **Tab 2 — Proposition:** AI‑generated, fully user‑editable recommendations to consolidate the sprawl
   into an RBAC‑style model, with a before→after map. You approve/modify/reject everything.
 
@@ -20,7 +23,10 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
 - **Windows PowerShell 5.1** (built into Windows) or PowerShell 7 — for the scan engine.
 - PowerShell modules `Az.Accounts`, `Az.Storage`, `Az.Resources`, `Microsoft.Graph.Authentication`,
   `Microsoft.Graph.Groups`, `Microsoft.Graph.Users` — the checker **auto‑installs** these.
-- **The dashboard needs nothing** — it's a single HTML file you open in a browser.
+- **SQLite is bundled** (`engine/tools/sqlite3.exe`, public‑domain) — nothing to install; the engine uses it
+  locally to build `data/aclassist.db`.
+- **The dashboard needs nothing** — it's a single HTML file you open in a browser (SQLite runs in‑page via
+  WebAssembly, fully offline).
 
 Run the checker (offers to install any missing modules — current‑user only, no winget/Node):
 
@@ -29,24 +35,35 @@ powershell -File ./engine/Assert-Prerequisites.ps1
 ```
 
 ## Quick start
-1. Run the prerequisite check (offers to install any missing modules):
+1. **Check prerequisites** (offers to install any missing modules — current‑user only):
    `powershell -File ./engine/Assert-Prerequisites.ps1`
-2. **Configure the target** — interactive setup signs you in, lets you pick subscription / storage
-   account / container from lists, and writes the git‑ignored `config/config.json` (re‑runs propose your
-   previous answers as defaults): `pwsh -File ./engine/Initialize-Config.ps1`
-3. *(M1)* Run the scan → produces `data/inventory.json`: `pwsh -File ./engine/Invoke-Scan.ps1`
-   *(auth is interactive OAuth only — no SAS or keys; if no config exists, the scan launches setup first.)*
-4. **Dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/inventory.json`
-   (drag‑and‑drop or file picker) — Tab 1 shows the inventory KPIs + filterable tables; click a KPI card
-   to jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.
-5. **Analyze:** `powershell -File ./analyzer/Invoke-Analysis.ps1` → `data/analysis.json` (duplicate
-   groups, personas, role‑collapse model, quantified savings).
-6. *(M4)* **AI proposition** — in VS Code + GitHub Copilot, run `ai/prompts/assess.prompt.md`. Copilot reads
-   `data/analysis.json`, names the roles + writes rationale into `data/recommendations.json`, then builds
-   `data/proposed-model.xlsx` (editable, with an **Approve / Modify / Reject** column).
-7. *(M5)* **Proposition (Tab 2):** in `dashboard/ACLassist.html`, open the **2 · Proposition** tab and load
-   `data/recommendations.json` — savings, before→after, and the proposed‑roles table. Make decisions in the
-   Excel. **Nothing is applied.**
+2. **Run the assessment** — one command signs you in, lets you pick subscription / storage account /
+   container the first time (saved to the git‑ignored `config/config.json`), performs the read‑only scan,
+   and builds the analyzed snapshot `data/aclassist.db`:
+
+   ```powershell
+   pwsh -File ./engine/Invoke-Assessment.ps1
+   ```
+
+   Auth is interactive OAuth only — no SAS or keys. Sign‑in and read‑only consent are shown before anything
+   is read. Re‑runs reuse your saved target; pass `-Reconfigure` to change it, or `-SkipScan` to rebuild the
+   database from the last scan.
+3. **Open the dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/aclassist.db`
+   (drag‑and‑drop or file picker). Tab 1 shows the inventory KPIs + filterable tables; click a KPI card to
+   jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.
+
+### Try it without Azure (synthetic sample)
+To see the dashboard before running a live scan, build a sample database from bundled synthetic data:
+
+```powershell
+cd web ; npm install ; npm run generate-sample ; cd ..
+powershell -File ./engine/Build-SampleDb.ps1     # → data/aclassist.db (no Azure calls)
+```
+
+Then open `dashboard/ACLassist.html` and load `data/aclassist.db`.
+
+> **Tab 2 (AI proposition)** is being rebuilt on the new `aclassist.db` data model — see [PLAN.md](PLAN.md)
+> (v2‑P2) for the updated proposition pipeline.
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
@@ -56,14 +73,16 @@ This repo is target‑agnostic. Secrets and real values live only in the git‑i
 
 ## Repository layout
 ```
-config/     target + auth configuration (config.json is git-ignored)
-engine/     PowerShell extractor — Azure-facing, READ-ONLY → data/inventory.json      (M1)
-analyzer/   PowerShell offline analysis → data/analysis.json                          (M3)
-ai/         Copilot prompt + schema + Excel export/import (user control)              (M4)
-web/        Vite + React dashboard source (build → single self-contained HTML)        (M2/M5)
-dashboard/  ACLassist.html — the built, ready-to-open single-file dashboard
-data/       generated artifacts (git-ignored)
-docs/       architecture, read-only guarantee, runbook
+config/       target + auth configuration (config.json is git-ignored)
+engine/       PowerShell — Azure-facing, READ-ONLY. Invoke-Assessment.ps1 → data/aclassist.db
+engine/sql/   schema.sql + analyze.sql (SQLite build + membership-metric queries)
+engine/tools/ bundled sqlite3.exe (public domain) used to build the snapshot
+analyzer/     PowerShell offline analysis (legacy JSON path)                          (M3)
+ai/           Copilot prompt + schema + Excel export/import (user control)            (M4)
+web/          Vite + React dashboard source (build → single self-contained HTML)      (M2/M5)
+dashboard/    ACLassist.html — the built single-file dashboard (reads .db via sql.js)
+data/         generated artifacts incl. aclassist.db (git-ignored)
+docs/         architecture, read-only guarantee, runbook
 ```
 
 ## Status
@@ -83,3 +102,9 @@ into a schema-validated `recommendations.json` + an editable `proposed-model.xls
 
 **M5 — Proposition (Tab 2)** — the dashboard renders `recommendations.json`: savings cards, a before→after
 summary, and the filterable / exportable proposed‑roles table with the Decision column. ✅
+
+**v2 (SQLite data model)** — the engine now emits a single portable **`data/aclassist.db`** built by a
+bundled `sqlite3.exe`, and computes **membership metrics** (effective users/group, transitive nested‑group
+counts, direct vs. effective groups/user) in SQL. One command — `engine/Invoke-Assessment.ps1` — scans and
+analyzes end‑to‑end, and the dashboard reads the `.db` in‑browser via sql.js (WebAssembly). Designed to scale
+to deeply nested directories with thousands of groups per user. ✅ *(v2‑P1; proposition on the new model is v2‑P2.)*

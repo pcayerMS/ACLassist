@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import type { Inventory } from '../types';
+import { loadInventoryFromDb } from '../data';
 
 interface Props {
   onLoad: (inv: Inventory) => void;
@@ -9,17 +10,23 @@ interface Props {
 }
 
 function readFile(file: File, onLoad: (inv: Inventory) => void, onError: (m: string) => void) {
-  file.text()
-    .then((t) => {
+  file.arrayBuffer()
+    .then((buf) => {
+      const bytes = new Uint8Array(buf);
+      const magic = String.fromCharCode.apply(null, Array.from(bytes.slice(0, 15)));
+      if (magic === 'SQLite format 3') {
+        loadInventoryFromDb(bytes).then(onLoad).catch(() => onError('Could not read that database (is it an aclassist.db?).'));
+        return;
+      }
       try {
-        const data = JSON.parse(t);
+        const data = JSON.parse(new TextDecoder().decode(bytes));
         if (!data?.meta || !Array.isArray(data.folders) || !Array.isArray(data.groups)) {
-          onError('That file does not look like an inventory.json (missing meta / folders / groups).');
+          onError('That file is not an aclassist database (.db) or a valid inventory.');
           return;
         }
         onLoad(data as Inventory);
       } catch {
-        onError('Could not parse that file as JSON.');
+        onError('That file is not an aclassist database (.db).');
       }
     })
     .catch(() => onError('Could not read that file.'));
@@ -34,7 +41,7 @@ export function FileLoader({ onLoad, onError, error, compact }: Props) {
     <input
       ref={inputRef}
       type="file"
-      accept=".json,application/json"
+      accept=".db,.sqlite,.json,application/json"
       style={{ display: 'none' }}
       onChange={(e) => pick(e.target.files?.[0])}
     />
@@ -44,7 +51,7 @@ export function FileLoader({ onLoad, onError, error, compact }: Props) {
     return (
       <>
         {input}
-        <button className="tab" onClick={() => inputRef.current?.click()} title="Load a different inventory.json">Load file…</button>
+        <button className="tab" onClick={() => inputRef.current?.click()} title="Load a different aclassist.db">Load file…</button>
       </>
     );
   }
@@ -60,13 +67,13 @@ export function FileLoader({ onLoad, onError, error, compact }: Props) {
       >
         {input}
         <div className="dz-icon">⤓</div>
-        <div className="dz-title">Open your <code>inventory.json</code></div>
+        <div className="dz-title">Open your <code>aclassist.db</code></div>
         <div className="dz-sub">Drag &amp; drop it here, or click to browse.</div>
         {error && <div className="dz-error">{error}</div>}
       </div>
       <div className="loader-help">
-        Produce it by running the read‑only scan (<code>engine/Invoke-Scan.ps1</code>), which writes
-        <code> data/inventory.json</code>. Everything here runs locally in your browser — nothing is uploaded.
+        Produce it by running the read‑only assessment (<code>engine/Invoke-Assessment.ps1</code>), which
+        writes <code>data/aclassist.db</code>. Everything runs locally in your browser — nothing is uploaded.
       </div>
     </div>
   );

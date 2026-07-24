@@ -85,7 +85,9 @@ function GroupsTable({ groups, orphanById, initial }: { groups: Group[]; orphanB
     { key: 'role', header: 'Role', filter: 'select', help: 'What the group does, inferred from usage: access (on a folder ACL), role (aggregates members), hybrid (both), or unused. Naming-independent.', value: (g) => roleOf(g), render: (g) => <span className={'tag tag-role-' + roleOf(g)} title={ROLE_TITLE[roleOf(g)]}>{roleOf(g)}</span> },
     { key: 'status', header: 'Status', filter: 'select', help: 'Whether the group actually grants or receives access: active, dormant (on an ACL but no user effectively has it), or unused (no ACL, no members).', value: (g) => statusOf(g), render: (g) => <span className={'tag ' + statusCls(statusOf(g))} title={STATUS_TITLE[statusOf(g)]}>{statusOf(g)}</span> },
     { key: 'kind', header: 'Naming', filter: 'select', help: 'Naming-convention prefix (e.g. ADLS_ / PRD_) — a label only, not used for classification.', value: (g) => g.kind, render: (g) => <span className={'tag tag-' + g.kind.toLowerCase()}>{g.kind}</span> },
-    { key: 'members', header: 'Members', help: 'Number of direct members on the group. Nested / transitive members are not counted here.', value: (g) => g.memberCount ?? 0 },
+    { key: 'members', header: 'Members', help: 'Number of direct members on the group.', value: (g) => g.memberCount ?? 0 },
+    { key: 'nested', header: 'Nested', help: 'Total groups nested inside this one (all descendants, transitive).', value: (g) => g.totalNestedGroups ?? 0 },
+    { key: 'effusers', header: 'Effective users', help: 'Users who ultimately land in this group — direct members plus members of every nested group.', value: (g) => g.effectiveUserCount ?? 0 },
     { key: 'id', header: 'Object ID', help: 'The group Microsoft Entra object ID (GUID).', value: (g) => g.id, render: (g) => <span className="mono dim">{g.id}</span> },
   ];
   return (
@@ -112,6 +114,8 @@ function UsersTable({ users, initial }: { users: User[]; initial?: Record<string
     { key: 'displayName', header: 'Name', help: 'Display name of the user.', value: (u) => u.displayName },
     { key: 'upn', header: 'UPN', help: 'User principal name — the sign-in identity.', value: (u) => u.upn, render: (u) => <span className="mono">{u.upn}</span> },
     { key: 'jobTitle', header: 'Job title', filter: 'select', help: 'Job title from the directory; used to spot personas.', value: (u) => u.jobTitle ?? '' },
+    { key: 'directGroupCount', header: 'Direct groups', help: 'Groups the user is a direct member of.', value: (u) => u.directGroupCount ?? 0 },
+    { key: 'effectiveGroupCount', header: 'Effective groups', help: 'Total groups the user effectively belongs to, including every group reached through nesting — the real over-membership number.', value: (u) => u.effectiveGroupCount ?? 0 },
     { key: 'accountEnabled', header: 'Enabled', filter: 'select', help: 'Whether the account is enabled in Entra ID.', value: (u) => (u.accountEnabled ? 'yes' : 'no'), render: (u) => <span className={'tag ' + (u.accountEnabled ? 'tag-ok' : 'tag-warn')}>{u.accountEnabled ? 'yes' : 'no'}</span> },
   ];
   return <DataTable rows={users} columns={columns} exportName="users" initialFilters={initial} />;

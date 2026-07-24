@@ -42,6 +42,8 @@ export interface Group {
   status?: string;
   onAce?: boolean;
   memberCount?: number;
+  totalNestedGroups?: number;
+  effectiveUserCount?: number;
   reachable?: boolean;
   securityEnabled: boolean;
   mail?: string | null;
@@ -53,6 +55,8 @@ export interface User {
   displayName: string;
   jobTitle?: string | null;
   accountEnabled: boolean;
+  directGroupCount?: number;
+  effectiveGroupCount?: number;
 }
 
 export interface Membership { groupId: string; memberId: string; memberType: string }

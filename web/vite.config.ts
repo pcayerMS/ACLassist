@@ -7,5 +7,6 @@ import { viteSingleFile } from 'vite-plugin-singlefile';
 export default defineConfig({
   base: './',
   plugins: [react(), viteSingleFile()],
-  build: { outDir: 'dist', chunkSizeWarningLimit: 4000 },
+  // Inline ALL assets (incl. the sql.js .wasm) as data URLs so the dashboard stays a single file.
+  build: { outDir: 'dist', chunkSizeWarningLimit: 4000, assetsInlineLimit: 100_000_000 },
 });

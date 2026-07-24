@@ -5,6 +5,21 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-24 — v2-P1: one-command pipeline + sql.js dashboard (validated)
+- **`engine/Invoke-Assessment.ps1`** — the whole assessment in **one command**: prerequisite check →
+  first‑run interactive setup → read‑only consent → scan (ADLS ACLs + Entra groups/users/nesting/memberships
+  + storage roles) → stage CSVs → build & analyze **`data/aclassist.db`**. Flags `-ConfigPath -AssumeYes
+  -Reconfigure -SkipScan`. Replaces the multi‑step `Invoke-Scan` → analyzer flow for the inventory path.
+- **`engine/Build-SampleDb.ps1`** — DEV/TEST helper that builds `data/aclassist.db` from the synthetic
+  sample (`npm run generate-sample`) with **no Azure calls**, so the dashboard can be tried offline.
+- **Dashboard reads the `.db`** — `web/src/data.ts` now loads `aclassist.db` via **sql.js** (in‑browser
+  SQLite/WebAssembly; the WASM is **inlined** into the single HTML, so it stays fully offline). The file
+  loader detects the SQLite magic header (`.db` / `.sqlite`) with a JSON fallback. Tab 1 gains **membership
+  columns** — Users: *Direct groups* / *Effective groups*; Groups: *Nested* / *Effective users*.
+- **Validated end‑to‑end in‑browser** on the sample DB: KPIs and the Groups/Users tables (including the new
+  columns) render straight from `aclassist.db`. Single‑file dashboard ~1.15 MB (WASM inlined); TypeScript
+  build clean, 0 npm vulnerabilities.
+
 ## 2026-07-24 — v2-P1: SQLite data layer + membership metrics (validated)
 - **`engine/sql/schema.sql`** (raw tables + persistent `snapshots` history) and **`engine/sql/analyze.sql`**
   — containment closure via **recursive CTEs** → per‑user **direct & effective** group counts, per‑group

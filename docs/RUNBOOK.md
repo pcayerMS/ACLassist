@@ -20,18 +20,21 @@ pwsh -File ./engine/Initialize-Config.ps1     # or: powershell -File ./engine/In
 You type your **tenant** and **subscription**, then choose the **storage account** and **container**
 from lists (the resource group is derived automatically). Auth is **interactive OAuth only** — no SAS,
 no keys, no stored secret; an optional **sign‑in UPN** is remembered as a login hint. Setup also runs
-automatically on the first scan if no config exists; use `Invoke-Scan.ps1 -Reconfigure` to change it later.
+automatically on the first assessment if no config exists; use `Invoke-Assessment.ps1 -Reconfigure` to
+change the target later.
 
 **Network:** if the storage account uses a private endpoint, run from a host that can reach it
 (in‑network / jump host).
 
-## 3. Confirm read‑only + run the scan  *(M1)*
+## 3. Confirm read‑only + run the assessment  *(one command)*
 ```powershell
-pwsh -File ./engine/Invoke-Scan.ps1        # or: powershell -File ./engine/Invoke-Scan.ps1
+pwsh -File ./engine/Invoke-Assessment.ps1     # or: powershell -File ./engine/Invoke-Assessment.ps1
 ```
-Shows the read‑only consent banner, signs in, enumerates folders + ACLs + groups +
-memberships + users + existing RBAC, and writes `data/inventory.json` (+ `data/inventory.jsonl`).
-(If no config exists yet, the scan launches the setup from step 2 first.)
+Shows the read‑only consent banner, signs in, enumerates folders + ACLs + groups + memberships + users +
+existing RBAC, then stages the data and builds the analyzed SQLite snapshot **`data/aclassist.db`** (using
+the bundled `engine/tools/sqlite3.exe`). One command does the whole inventory. Flags: `-Reconfigure` (change
+target), `-SkipScan` (rebuild the DB from the last scan), `-AssumeYes` (no prompts). If no config exists yet,
+it launches the setup from step 2 first.
 
 **Identity:** the scan reads ACLs across the whole lake, so sign in with an identity that has
 data‑plane read everywhere — **Storage Blob Data Reader/Owner** — plus Microsoft Graph directory read.
@@ -47,14 +50,17 @@ REST getAccessControl call).
 ```
 dashboard/ACLassist.html
 ```
-Click **Open your inventory.json** (or drag it in) and pick the `data/inventory.json` the scan produced.
-Tab 1 shows KPI cards (folders, groups, users, ACEs, **dormant groups**, group nesting, memberships,
-storage roles) and the inventory as **Groups / Folders / Users / Group nesting / Memberships / Storage
-roles** tables. Each table has **per‑column filters** (text or dropdown), **click‑to‑sort** headers, and
-**Export filtered / Export all** to Excel (`.xlsx`). The **Groups** table classifies each group by observed
-function — **Role** (`access` on a folder ACL / `role` aggregates members / `hybrid` both / `unused` neither,
-naming‑independent) and **Status** (`active`, or **`dormant`** = on an ACL but no user is an effective
-member — a dead grant); the old `ADLS_`/`PRD_` prefix is kept as the **Naming** label. **Click any KPI card**
+Click **Open your aclassist.db** (or drag it in) and pick the `data/aclassist.db` the assessment produced —
+the dashboard reads it in‑browser via SQLite/WebAssembly (still fully offline). Tab 1 shows KPI cards
+(folders, groups, users, ACEs, **dormant groups**, group nesting, memberships, storage roles) and the
+inventory as **Groups / Folders / Users / Group nesting / Memberships / Storage roles** tables. Each table has
+**per‑column filters** (text or dropdown), **click‑to‑sort** headers, and **Export filtered / Export all** to
+Excel (`.xlsx`). The **Users** table shows **Direct groups** vs **Effective groups** (direct + inherited via
+nesting) per user; the **Groups** table shows **Nested** (transitive nested groups) and **Effective users**
+per group, and classifies each group by observed function — **Role** (`access` on a folder ACL / `role`
+aggregates members / `hybrid` both / `unused` neither, naming‑independent) and **Status** (`active`, or
+**`dormant`** = on an ACL but no user is an effective member — a dead grant); the old `ADLS_`/`PRD_` prefix is
+kept as the **Naming** label. **Click any KPI card**
 to jump to the matching table with the relevant filter pre‑applied (e.g. *Dormant* → Groups filtered to
 `status = dormant`); active filters show as chips you can clear. The **Storage roles** tab lists the *existing* Azure role assignments
 on the storage account (data‑ vs control‑plane) — a separate system from the folder ACLs, **not** the RBAC
@@ -62,7 +68,17 @@ model proposed in Tab 2. Everything runs locally in the browser — nothing is u
 
 *(Maintainers only — to rebuild the HTML from source: `cd web && npm install && npm run portable`.)*
 
-## 5. Analyze the sprawl  *(M3)*
+**Try it without Azure:** to preview the dashboard on synthetic data, run `cd web ; npm run generate-sample`
+then `powershell -File ./engine/Build-SampleDb.ps1` (no Azure calls) to produce `data/aclassist.db`, and load
+it in step 4.
+
+> **Note — proposition pipeline (steps 5–7) is being migrated.** `Invoke-Assessment.ps1` already analyzes
+> everything into `data/aclassist.db`. The steps below are the **legacy JSON path** (they read the separate
+> `data/inventory.json` / `analysis.json`) used to generate the AI proposition for Tab 2, which is being
+> rebuilt on the `.db` in v2‑P2 — see [PLAN.md](../PLAN.md). To run them today, produce the JSON inventory
+> with the legacy `engine/Invoke-Scan.ps1` first.
+
+## 5. Analyze the sprawl  *(M3, legacy JSON path)*
 ```powershell
 powershell -File ./analyzer/Invoke-Analysis.ps1
 ```

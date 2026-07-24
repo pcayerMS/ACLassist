@@ -12,6 +12,7 @@ dist/
 *.tsbuildinfo
 
 # Dashboard generated/sample data (recreate with `npm run generate-sample` or a real scan)
+/web/public/aclassist.db
 /web/public/inventory.json
 /web/public/inventory.jsonl
 /web/public/recommendations.json
