@@ -14,7 +14,7 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
   memberships, group nesting, ACLs, storage roles) plus computed **membership metrics** (effective users per
   group, transitive nested‑group counts, direct vs. effective groups per user). One file, one scan.
 - **Tab 1 — Inventory:** loads `aclassist.db` and renders the real ACL/permission structure as filterable,
-  sortable, Excel‑exportable tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles) with
+  sortable, Excel‑exportable tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles (RBAC)) with
   clickable KPI cards that jump straight to the relevant pre‑filtered view.
 - **Tab 2 — Proposition:** AI‑generated, fully user‑editable recommendations to consolidate the sprawl
   into an RBAC‑style model, with a before→after map. You approve/modify/reject everything.

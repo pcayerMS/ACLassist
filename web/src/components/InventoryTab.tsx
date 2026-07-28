@@ -31,7 +31,7 @@ export function InventoryTab({ inv }: { inv: Inventory }) {
     { key: 'users', label: 'Users', count: inv.users.length },
     { key: 'nesting', label: 'Group nesting', count: inv.groupNesting.length },
     { key: 'memberships', label: 'Memberships', count: inv.memberships.length },
-    { key: 'rbac', label: 'Storage roles', count: inv.rbacAssignments.length },
+    { key: 'rbac', label: 'Storage roles (RBAC)', count: inv.rbacAssignments.length },
   ];
 
   return (
@@ -85,9 +85,9 @@ function GroupsTable({ groups, orphanById, initial }: { groups: Group[]; orphanB
     { key: 'role', header: 'Role', filter: 'select', help: 'What the group does, inferred from usage: access (on a folder ACL), role (aggregates members), hybrid (both), or unused. Naming-independent.', value: (g) => roleOf(g), render: (g) => <span className={'tag tag-role-' + roleOf(g)} title={ROLE_TITLE[roleOf(g)]}>{roleOf(g)}</span> },
     { key: 'status', header: 'Status', filter: 'select', help: 'Whether the group actually grants or receives access: active, dormant (on an ACL but no user effectively has it), or unused (no ACL, no members).', value: (g) => statusOf(g), render: (g) => <span className={'tag ' + statusCls(statusOf(g))} title={STATUS_TITLE[statusOf(g)]}>{statusOf(g)}</span> },
     { key: 'kind', header: 'Naming', filter: 'select', help: 'Naming-convention prefix (e.g. ADLS_ / PRD_) — a label only, not used for classification.', value: (g) => g.kind, render: (g) => <span className={'tag tag-' + g.kind.toLowerCase()}>{g.kind}</span> },
-    { key: 'members', header: 'Members', help: 'Number of direct members on the group.', value: (g) => g.memberCount ?? 0 },
-    { key: 'nested', header: 'Nested', help: 'Total groups nested inside this one (all descendants, transitive).', value: (g) => g.totalNestedGroups ?? 0 },
-    { key: 'effusers', header: 'Effective users', help: 'Users who ultimately land in this group — direct members plus members of every nested group.', value: (g) => g.effectiveUserCount ?? 0 },
+    { key: 'members', header: 'Members', filter: 'range', help: 'Number of direct members on the group. Filter by range — pick a bucket or type 10-50, 100+, >25.', value: (g) => g.memberCount ?? 0 },
+    { key: 'nested', header: 'Nested', filter: 'range', help: 'Total groups nested inside this one (all descendants, transitive). Filter by range — pick a bucket or type 10-50, 100+, >25.', value: (g) => g.totalNestedGroups ?? 0 },
+    { key: 'effusers', header: 'Effective users', filter: 'range', help: 'Users who ultimately land in this group — direct members plus members of every nested group. Filter by range — pick a bucket or type 10-50, 100+, >25.', value: (g) => g.effectiveUserCount ?? 0 },
     { key: 'id', header: 'Object ID', help: 'The group Microsoft Entra object ID (GUID).', value: (g) => g.id, render: (g) => <span className="mono dim">{g.id}</span> },
   ];
   return (
@@ -102,8 +102,7 @@ function FoldersTable({ folders, initial }: { folders: Folder[]; initial?: Recor
   const columns: Column<Folder>[] = [
     { key: 'path', header: 'Path', help: 'Full path of the directory within the container.', value: (f) => f.path, render: (f) => <span className="mono">{f.path}</span> },
     { key: 'depth', header: 'Depth', help: 'How many levels deep the folder is from the container root.', value: (f) => f.depth },
-    { key: 'level1', header: 'Dept', filter: 'select', help: 'First path segment — typically the owning department or domain.', value: (f) => f.level1 ?? '' },
-    { key: 'level3', header: 'Layer', filter: 'select', help: 'Third path segment — e.g. the data layer (bronze/silver/gold).', value: (f) => f.level3 ?? '' },
+    { key: 'level1', header: 'Base directory', filter: 'select', help: 'First path segment under the container root — the top-level directory this folder sits under.', value: (f) => f.level1 ?? '' },
     { key: 'basePermissions', header: 'Base perms', help: 'POSIX base permissions on the folder (owner/group/other), e.g. rwxr-x---.', value: (f) => f.basePermissions ?? '', render: (f) => <span className="mono">{f.basePermissions}</span> },
   ];
   return <DataTable rows={folders} columns={columns} exportName="folders" initialFilters={initial} />;

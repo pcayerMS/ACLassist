@@ -141,6 +141,7 @@ th.sortable:hover { color: var(--text); }
 .filter-row th { top: 33px; padding: 6px 10px; background: var(--panel); z-index: 4; }
 .filter-row input, .filter-row select { width: 100%; min-width: 90px; background: #0c111b; border: 1px solid var(--line); color: var(--text); padding: 5px 8px; border-radius: 6px; font-size: 12px; }
 .filter-row input:focus, .filter-row select:focus { outline: none; border-color: var(--accent); }
+.filter-row input.range-bad { border-color: var(--warn); }
 .view-note { color: var(--muted); font-size: 12.5px; margin: 0 0 10px; line-height: 1.5; }
 .view-note.info { background: #10261b; border: 1px solid #1f5138; color: #cfe9d8; padding: 10px 14px; border-radius: 8px; }
 .view-note.info .mono { color: #8ef0bd; }

@@ -153,10 +153,12 @@ function ConvertFrom-XmsAcl {
 }
 
 function Get-PathFacets {
-    <# Splits a path into positional facets (level1..4 = dept/area/layer/project for this data shape). #>
+    <# Splits a path into positional segments (level1..4 = 1st..4th segment; no naming convention assumed). #>
     param([string]$Path)
     $clean = "$Path".Trim('/')
-    $segs = if ($clean) { $clean -split '/' } else { @() }
+    # @() is required: a single-segment path otherwise collapses to a string and indexes by character.
+    $segs = @()
+    if ($clean) { $segs = @($clean -split '/') }
     [pscustomobject]@{
         Path    = '/' + $clean
         Name    = if ($segs.Count) { $segs[-1] } else { '/' }

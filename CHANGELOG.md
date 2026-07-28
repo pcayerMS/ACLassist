@@ -5,6 +5,30 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-28 — Tab 1: numeric range filters, path-facet fix, clearer labels
+- **FIXED (data accuracy) — top-level folders were recorded as single letters.** `Get-PathFacets` split the
+  path with `$segs = if ($clean) { $clean -split '/' }`; for a **single-segment path** PowerShell collapses
+  that one-element result to a **string**, so `$segs[0]` returned the first *character* and `$segs[-1]` the
+  last. Every depth‑1 folder therefore got `level1 = 'F'` and `name = 'e'` instead of `Finance`. Deeper paths
+  were unaffected, which is why the Base-directory filter listed both `F` and `Finance`. Fixed by forcing an
+  array (`$segs = @($clean -split '/')`); verified under Windows PowerShell 5.1 at depths 0–4.
+  **Re-run the assessment to correct an existing `aclassist.db`.**
+- **Range filters on count columns.** The Groups table's **Members**, **Nested**, and **Effective users**
+  columns no longer filter as text (matching “22” as a substring was meaningless). They now take a **numeric
+  range**: pick a preset bucket from the dropdown (`0`, `1-10`, `11-50`, … — generated from the actual data,
+  so the options stay relevant at any scale) **or type your own** — `10-50`, `100+`, `>25`, `>=25`, `<5`,
+  `<=5`, or an exact number. An unparseable entry is outlined red and is **not** applied, so a filter never
+  silently changes what you're looking at. New `filter: 'range'` column type in `DataTable`.
+- **Folders table is now customer-agnostic.** “Dept” → **“Base directory”** (the first path segment under the
+  container root), and the **“Layer”** column was **removed** — it assumed a bronze/silver/gold lakehouse
+  shape, and the full path already shows every segment. `level1..level4` are documented as plain positional
+  segments in [PLAN.md](PLAN.md); no naming convention is assumed anywhere.
+- **“Storage roles” sub‑tab renamed “Storage roles (RBAC)”** to make explicit that it lists Azure RBAC role
+  assignments, distinct from the POSIX folder ACLs.
+- **Validated** against the database: the sample's nested‑group distribution is exactly 2,304 groups at `0`
+  and 8 groups at `24`; the dashboard returns 2,304 for `0`, 8 for `11-50` and `>0`, and 0 for `1-10` — an
+  exact match.
+
 ## 2026-07-24 — v2-P1: one-command pipeline + sql.js dashboard (validated)
 - **`engine/Invoke-Assessment.ps1`** — the whole assessment in **one command**: prerequisite check →
   first‑run interactive setup → read‑only consent → scan (ADLS ACLs + Entra groups/users/nesting/memberships

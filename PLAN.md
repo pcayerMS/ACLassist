@@ -152,7 +152,8 @@ acl-reporting/
   (e.g., in‑network / on a jump host). This is a *placement* constraint, documented in the runbook.
 
 ### 6.3 Extraction engine — what it captures
-- **Folders:** full path hierarchy (dept → area → layer → project → leaf).
+- **Folders:** full path hierarchy, captured as **positional segments** (level1..level4 = 1st..4th segment
+  under the container root) — no naming convention assumed, so it fits any customer's folder layout.
 - **ACLs:** **access ACEs and default (inherited) ACEs**; owner/owning‑group/permission bits; the named
   group/user ACEs per directory.
 - **Existing Azure RBAC** data‑plane role assignments at account/container scope *(expected empty for this
@@ -164,7 +165,7 @@ acl-reporting/
 
 ### 6.4 Inventory data model (`inventory.json`)
 Normalized entities with stable IDs so the analyzer and dashboard can join them:
-- `folders[]` (path, depth, dept/area/layer/project, sensitivity)
+- `folders[]` (path, depth, level1..level4 positional segments, basePermissions)
 - `groups[]` (name, objectId, naming kind: ADLS|PRD|other, **role**: access|role|hybrid|unused, **status**: active|dormant|unused, onAce, memberCount, reachable, nestedInto[])
 - `users[]` (upn, objectId, jobRole, enabled, groupIds[])
 - `aces[]` (folderId, principalId, principalType, permission r/w/x, aclType access|default)
@@ -216,8 +217,8 @@ decisions into `recommendations.json`, which the dashboard then reflects (approv
 
 ### 6.8 Dashboard
 **Tab 1 — Inventory (primary):**
-- **List:** searchable/filterable tables (folders, groups, users, ACEs) with facets (dept, layer,
-  permission, sensitivity, orphaned/stale).
+- **List:** searchable/filterable tables (folders, groups, users, ACEs) with facets (base directory,
+  permission, role/status, numeric ranges on the count columns).
 - **Map:** interactive, **aggregated with drill‑down** for scale — hierarchy treemap/icicle, a
   group×scope **heatmap**, and group→folder→user relationships.
 - **KPIs:** # folders, # groups, # users, # ACEs, avg ACEs/folder, # dormant groups, sprawl index.

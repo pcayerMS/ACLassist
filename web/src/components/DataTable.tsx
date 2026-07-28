@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import writeXlsxFile from 'write-excel-file/browser';
 
 export interface Column<T> {
@@ -6,8 +6,36 @@ export interface Column<T> {
   header: string;
   value: (row: T) => string | number;
   render?: (row: T) => ReactNode;
-  filter?: 'text' | 'select' | 'none';
+  filter?: 'text' | 'select' | 'range' | 'none';
   help?: string;
+}
+
+// Accepts "10-50", "100+", ">25", ">=25", "<5", "<=5" or an exact number; null = not a valid range.
+function parseRange(input: string): { min: number; max: number } | null {
+  const t = input.replace(/\s+/g, '');
+  if (!t) return null;
+  let m: RegExpExecArray | null;
+  if ((m = /^(\d+)-(\d+)$/.exec(t))) return { min: Number(m[1]), max: Number(m[2]) };
+  if ((m = /^(\d+)\+$/.exec(t))) return { min: Number(m[1]), max: Infinity };
+  if ((m = /^>=(\d+)$/.exec(t))) return { min: Number(m[1]), max: Infinity };
+  if ((m = /^>(\d+)$/.exec(t))) return { min: Number(m[1]) + 1, max: Infinity };
+  if ((m = /^<=(\d+)$/.exec(t))) return { min: -Infinity, max: Number(m[1]) };
+  if ((m = /^<(\d+)$/.exec(t))) return { min: -Infinity, max: Number(m[1]) - 1 };
+  if ((m = /^(\d+)$/.exec(t))) return { min: Number(m[1]), max: Number(m[1]) };
+  return null;
+}
+
+const RANGE_STEPS = [10, 50, 100, 500, 1000, 5000];
+function rangePresets(max: number): string[] {
+  const out = ['0'];
+  let lo = 1;
+  for (const hi of RANGE_STEPS) {
+    if (lo > max) return out;
+    out.push(lo + '-' + hi);
+    lo = hi + 1;
+  }
+  if (max >= lo) out.push(lo + '+');
+  return out;
 }
 
 interface Props<T> {
@@ -22,6 +50,7 @@ export function DataTable<T>({ rows, columns, exportName = 'export', initialFilt
   const [filters, setFilters] = useState<Record<string, string>>(initialFilters ?? {});
   const [sort, setSort] = useState<{ key: string; dir: 1 | -1 } | null>(null);
   const [page, setPage] = useState(0);
+  const uid = useId();
 
   useEffect(() => { setFilters(initialFilters ?? {}); setPage(0); }, [initialFilters]);
 
@@ -37,12 +66,29 @@ export function DataTable<T>({ rows, columns, exportName = 'export', initialFilt
     return o;
   }, [columns, rows]);
 
+  const rangeOptions = useMemo(() => {
+    const o: Record<string, string[]> = {};
+    for (const c of columns) {
+      if (c.filter !== 'range') continue;
+      let max = 0;
+      for (const r of rows) { const n = Number(c.value(r)); if (Number.isFinite(n) && n > max) max = n; }
+      o[c.key] = rangePresets(max);
+    }
+    return o;
+  }, [columns, rows]);
+
   const filtered = useMemo(() => {
     let out = rows;
     for (const [key, val] of Object.entries(filters)) {
       if (!val) continue;
       const c = colByKey[key];
       if (!c) continue;
+      if (c.filter === 'range') {
+        const r = parseRange(val);
+        if (!r) continue;
+        out = out.filter((row) => { const n = Number(c.value(row)); return Number.isFinite(n) && n >= r.min && n <= r.max; });
+        continue;
+      }
       const needle = val.toLowerCase();
       const exact = c.filter === 'select';
       out = out.filter((r) => {
@@ -122,6 +168,20 @@ export function DataTable<T>({ rows, columns, exportName = 'export', initialFilt
                       <option value="">all</option>
                       {selectOptions[c.key]?.map((o) => <option key={o} value={o}>{o}</option>)}
                     </select>
+                  ) : c.filter === 'range' ? (
+                    <>
+                      <input
+                        className={filters[c.key] && !parseRange(filters[c.key]) ? 'range-bad' : undefined}
+                        list={`range-${uid}-${c.key}`}
+                        value={filters[c.key] ?? ''}
+                        onChange={(e) => setColFilter(c.key, e.target.value)}
+                        placeholder="any ▾"
+                        title="Pick a range or type your own: 10-50, 100+, >25, <=5, or an exact number."
+                      />
+                      <datalist id={`range-${uid}-${c.key}`}>
+                        {rangeOptions[c.key]?.map((o) => <option key={o} value={o} />)}
+                      </datalist>
+                    </>
                   ) : (
                     <input value={filters[c.key] ?? ''} onChange={(e) => setColFilter(c.key, e.target.value)} placeholder="filter…" />
                   )}

@@ -53,8 +53,8 @@ dashboard/ACLassist.html
 Click **Open your aclassist.db** (or drag it in) and pick the `data/aclassist.db` the assessment produced —
 the dashboard reads it in‑browser via SQLite/WebAssembly (still fully offline). Tab 1 shows KPI cards
 (folders, groups, users, ACEs, **dormant groups**, group nesting, memberships, storage roles) and the
-inventory as **Groups / Folders / Users / Group nesting / Memberships / Storage roles** tables. Each table has
-**per‑column filters** (text or dropdown), **click‑to‑sort** headers, and **Export filtered / Export all** to
+inventory as **Groups / Folders / Users / Group nesting / Memberships / Storage roles (RBAC)** tables. Each table has
+**per‑column filters** (text, dropdown, or **numeric range**), **click‑to‑sort** headers, and **Export filtered / Export all** to
 Excel (`.xlsx`). The **Users** table shows **Direct groups** vs **Effective groups** (direct + inherited via
 nesting) per user; the **Groups** table shows **Nested** (transitive nested groups) and **Effective users**
 per group, and classifies each group by observed function — **Role** (`access` on a folder ACL / `role`
@@ -62,7 +62,10 @@ aggregates members / `hybrid` both / `unused` neither, naming‑independent) and
 **`dormant`** = on an ACL but no user is an effective member — a dead grant); the old `ADLS_`/`PRD_` prefix is
 kept as the **Naming** label. **Click any KPI card**
 to jump to the matching table with the relevant filter pre‑applied (e.g. *Dormant* → Groups filtered to
-`status = dormant`); active filters show as chips you can clear. The **Storage roles** tab lists the *existing* Azure role assignments
+`status = dormant`); active filters show as chips you can clear. The count columns (**Members**, **Nested**,
+**Effective users**) filter by **range** rather than exact text — pick a bucket from the dropdown (`0`, `1-10`,
+`11-50`, …, sized to your data) or type your own (`10-50`, `100+`, `>25`, `<=5`, or an exact number); an
+unparseable entry is outlined red and simply isn't applied. The **Storage roles (RBAC)** tab lists the *existing* Azure role assignments
 on the storage account (data‑ vs control‑plane) — a separate system from the folder ACLs, **not** the RBAC
 model proposed in Tab 2. Everything runs locally in the browser — nothing is uploaded.
 
