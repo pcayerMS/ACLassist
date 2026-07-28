@@ -75,13 +75,31 @@ model proposed in Tab 2. Everything runs locally in the browser — nothing is u
 then `powershell -File ./engine/Build-SampleDb.ps1` (no Azure calls) to produce `data/aclassist.db`, and load
 it in step 4.
 
-> **Note — proposition pipeline (steps 5–7) is being migrated.** `Invoke-Assessment.ps1` already analyzes
-> everything into `data/aclassist.db`. The steps below are the **legacy JSON path** (they read the separate
-> `data/inventory.json` / `analysis.json`) used to generate the AI proposition for Tab 2, which is being
-> rebuilt on the `.db` in v2‑P2 — see [PLAN.md](../PLAN.md). To run them today, produce the JSON inventory
-> with the legacy `engine/Invoke-Scan.ps1` first.
+## 5. Build the proposition  *(offline — no Azure, no AI)*
+```powershell
+pwsh -File ./engine/Invoke-Proposition.ps1        # optional: -OverMembershipThreshold 100
+```
+Computes the reduction model **inside `data/aclassist.db`** using all five levers and prints the headline.
+Every number comes from `engine/sql/propose.sql` — reproducible SQL, nothing inferred. Results land in
+`proposed_roles`, `proposed_group_actions`, `proposed_user_flags` and `proposal_summary`.
 
-## 5. Analyze the sprawl  *(M3, legacy JSON path)*
+Two figures are reported, and the distinction matters:
+- **Access‑safe reduction** — retire dormant/unused groups, merge groups with an *identical* grant
+  footprint, and drop pass‑through nesting. **Provably no user gains or loses any access.**
+- **Full consolidation** — additionally replaces groups with RBAC‑style roles. Each role is scoped to the
+  **deepest folder that is an ancestor of every folder it covers**, so it widens access as little as the
+  data allows; any role that still widens is flagged `access_safe = 0` with `new_folder_count` = exactly how
+  many folders it would newly expose. Review those before accepting them.
+
+**Nothing is applied.** This is data for the customer to approve, modify or reject.
+
+> **Note — the AI proposition steps below are being migrated.** `Invoke-Proposition.ps1` above already
+> produces the complete factual model in the database. The steps below are the **legacy JSON path** (they
+> read the separate `data/inventory.json` / `analysis.json`) used to generate the AI proposition for Tab 2,
+> which is being rebuilt on the `.db` in v2‑P2 — see [PLAN.md](../PLAN.md). To run them today, produce the
+> JSON inventory with the legacy `engine/Invoke-Scan.ps1` first.
+
+## 6. Analyze the sprawl  *(M3, legacy JSON path)*
 ```powershell
 powershell -File ./analyzer/Invoke-Analysis.ps1
 ```

@@ -5,6 +5,30 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-28 — v2-P2 (part 1): deterministic proposition engine
+- **`engine/sql/propose.sql` + `engine/Invoke-Proposition.ps1`** — the proposition now runs **inside the
+  database**, offline, with **no Azure and no AI**. All five levers are implemented as reproducible SQL:
+  RBAC‑style roles, retire dormant/unused groups, merge duplicate groups, flatten pass‑through nesting, and
+  flag users carrying too many groups.
+- **Two-tier safety model — the core design point.** Every proposed action carries `access_safe`:
+  - `1` = **provably no change** to any user's effective access (dead grants, identical‑footprint merges,
+    pass‑through nesting removal).
+  - `0` = may **widen** access, and carries `new_folder_count` — exactly how many folders it would newly
+    expose. Nothing widens silently.
+- **Roles are scoped to the deepest common ancestor** of the folders they actually cover, not to the whole
+  department. On the sample this cut roles needing review from **14 → 4**; the other 10 are exactly scoped
+  and widen nothing. Prefix matching uses `substr()`, not `LIKE`, so folder names containing `%` or `_`
+  cannot produce a false match.
+- **Duplicate detection** uses a canonical grant footprint built with `group_concat(… ORDER BY …)`; the
+  runner **verifies SQLite ≥ 3.44** so that ordering is guaranteed rather than incidental.
+- Parameters (e.g. `-OverMembershipThreshold`, default 50) travel through an imported `proposal_config`
+  table — still **no string-built SQL** anywhere.
+- **Validated on the sample:** 2,312 groups → **26** via access‑safe actions alone (98.9%, all 2,286 dormant
+  grants retired); full consolidation reaches a 22‑object model. Seven correctness invariants pass — every
+  group has exactly one action, no dormant group is mapped to a role, `access_safe` roles widen nothing,
+  flagged roles genuinely widen, and no retire action drops a group that still has effective users.
+- Nothing is applied, ever. Output is data for the customer to approve / modify / reject.
+
 ## 2026-07-28 — Tab 1: numeric range filters, path-facet fix, clearer labels
 - **FIXED (data accuracy) — top-level folders were recorded as single letters.** `Get-PathFacets` split the
   path with `$segs = if ($clean) { $clean -split '/' }`; for a **single-segment path** PowerShell collapses

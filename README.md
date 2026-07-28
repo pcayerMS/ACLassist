@@ -51,6 +51,16 @@ powershell -File ./engine/Assert-Prerequisites.ps1
 3. **Open the dashboard:** open `dashboard/ACLassist.html` in any browser and load your `data/aclassist.db`
    (drag‑and‑drop or file picker). Tab 1 shows the inventory KPIs + filterable tables; click a KPI card to
    jump to a pre‑filtered view, and **Export filtered / Export all** to Excel. No install.
+4. **Build the proposition** — offline, no Azure, no AI. Computes the reduction model into the same database:
+
+   ```powershell
+   pwsh -File ./engine/Invoke-Proposition.ps1
+   ```
+
+   It reports two honest figures: an **access‑safe** reduction (retire dead grants, merge identical groups,
+   flatten pass‑through nesting — *provably no user gains or loses access*) and a **full consolidation**
+   adding RBAC‑style roles, where every role that would widen access is flagged with exactly how many
+   folders it would newly expose. Nothing is ever applied.
 
 ### Try it without Azure (synthetic sample)
 To see the dashboard before running a live scan, build a sample database from bundled synthetic data:
@@ -62,8 +72,9 @@ powershell -File ./engine/Build-SampleDb.ps1     # → data/aclassist.db (no Azu
 
 Then open `dashboard/ACLassist.html` and load `data/aclassist.db`.
 
-> **Tab 2 (AI proposition)** is being rebuilt on the new `aclassist.db` data model — see [PLAN.md](PLAN.md)
-> (v2‑P2) for the updated proposition pipeline.
+> **Tab 2** currently renders the legacy `recommendations.json`. The new DB‑native proposition
+> (`engine/Invoke-Proposition.ps1`) is built and validated; wiring Tab 2 to it, plus the optional AI naming
+> step, is the rest of v2‑P2 — see [PLAN.md](PLAN.md).
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
