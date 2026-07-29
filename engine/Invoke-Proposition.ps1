@@ -53,7 +53,7 @@ if ($hasAnalysis.Trim() -eq '0') {
 }
 
 Write-Host ''
-Write-Host 'ACLassist — proposition (offline, read-only, nothing is applied)' -ForegroundColor Cyan
+Write-Host 'ACLassist - proposition (offline, read-only, nothing is applied)' -ForegroundColor Cyan
 Write-Host ("Database : {0}" -f $DbPath) -ForegroundColor Cyan
 Write-Host ("SQLite   : {0}" -f $ver) -ForegroundColor Cyan
 
@@ -86,7 +86,7 @@ Write-Host ('  merge duplicates      : {0}' -f $s.merge_duplicate)
 Write-Host ('  flatten pass-through  : {0}' -f $s.flatten_nesting)
 Write-Host ('  -> removable          : {0}  ({1}%)   groups left: {2}' -f $s.safe_removable, $s.safe_reduction_pct, $s.groups_after_safe) -ForegroundColor Green
 Write-Host ''
-Write-Host 'Full consolidation (adds RBAC roles — review the widening flags)' -ForegroundColor Yellow
+Write-Host 'Full consolidation (adds RBAC roles - review the widening flags)' -ForegroundColor Yellow
 Write-Host ('  proposed roles        : {0}   (needing review: {1})' -f $s.proposed_role_count, $s.roles_needing_review)
 Write-Host ('  groups mapped to role : {0}' -f $s.map_to_role)
 Write-Host ('  kept as-is            : {0}' -f $s.keep_group)

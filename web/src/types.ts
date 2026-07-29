@@ -76,7 +76,7 @@ export interface Inventory {
   aceJsonl?: string;
 }
 
-// --- Tab 2: AI proposition (mirrors ai/recommendations.schema.json) ---
+// --- Tab 2 (legacy JSON path): AI proposition (mirrors ai/recommendations.schema.json) ---
 export interface RecRole {
   id: string;
   displayName: string;
@@ -97,4 +97,78 @@ export interface Recommendations {
   summary: { currentGroups: number; proposedRoleCount: number; groupsEliminated: number; reductionPct: number; headline?: string };
   roles: RecRole[];
   findings?: RecFinding[];
+}
+
+// --- Tab 2: deterministic proposition, read from aclassist.db (engine/sql/propose.sql) ---
+export interface ProposalSummary {
+  scanId: string;
+  generatedUtc: string;
+  currentGroups: number;
+  proposedRoleCount: number;
+  retireDormant: number;
+  retireUnused: number;
+  mergeDuplicate: number;
+  flattenNesting: number;
+  mapToRole: number;
+  keepGroup: number;
+  usersOverThreshold: number;
+  rolesNeedingReview: number;
+  safeRemovable: number;
+  groupsAfterSafe: number;
+  groupsAfterFull: number;
+  safeReductionPct: number;
+  fullReductionPct: number;
+}
+
+export interface ProposedRole {
+  roleId: string;
+  baseDir: string;
+  accessLevel: string;
+  azureRole: string;
+  folderScope: string;
+  replacesGroupCount: number;
+  memberUserCount: number;
+  coveredFolderCount: number;
+  scopeFolderCount: number;
+  /** Folders the role would expose that the groups it replaces did not already grant. */
+  newFolderCount: number;
+  accessSafe: boolean;
+  displayName: string;
+  rationale: string;
+  confidence: string;
+  /** 'deterministic' or 'ai' — the AI may only ever change displayName / rationale. */
+  namedBy: string;
+  decision: string;
+}
+
+export interface ProposedGroupAction {
+  groupId: string;
+  displayName: string;
+  observedRole: string;
+  status: string;
+  memberCount: number;
+  effectiveUserCount: number;
+  action: string;
+  target: string;
+  reason: string;
+  accessSafe: boolean;
+  decision: string;
+}
+
+export interface ProposedUserFlag {
+  userId: string;
+  upn: string;
+  displayName: string;
+  jobTitle: string;
+  directGroupCount: number;
+  effectiveGroupCount: number;
+  threshold: number;
+  overThreshold: boolean;
+}
+
+export interface Proposal {
+  summary: ProposalSummary;
+  roles: ProposedRole[];
+  actions: ProposedGroupAction[];
+  userFlags: ProposedUserFlag[];
 }

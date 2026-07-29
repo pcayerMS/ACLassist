@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
-import type { Inventory } from './types';
-import { loadInventory } from './data';
+import type { Inventory, Proposal } from './types';
+import { loadFromUrl, type LoadResult } from './data';
 import { InventoryTab } from './components/InventoryTab';
 import { PropositionTab } from './components/PropositionTab';
 import { FileLoader } from './components/FileLoader';
@@ -10,19 +10,22 @@ type Status = 'loading' | 'need-file' | 'ready' | 'error';
 
 export default function App() {
   const [inv, setInv] = useState<Inventory | null>(null);
+  const [proposal, setProposal] = useState<Proposal | null>(null);
   const [status, setStatus] = useState<Status>('loading');
   const [err, setErr] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>('inventory');
 
   useEffect(() => {
-    // Server/dev mode: try to fetch a co-located inventory.json. If unavailable (e.g. the file was
+    // Server/dev mode: try to fetch a co-located aclassist.db. If unavailable (e.g. the file was
     // opened directly as file://), fall back to letting the user pick the file the scan produced.
-    loadInventory()
-      .then((i) => { setInv(i); setStatus('ready'); })
+    loadFromUrl()
+      .then((r) => { setInv(r.inventory); setProposal(r.proposal); setStatus('ready'); })
       .catch(() => setStatus('need-file'));
   }, []);
 
-  const handleInventory = useCallback((i: Inventory) => { setInv(i); setStatus('ready'); setErr(null); }, []);
+  const handleLoad = useCallback((r: LoadResult) => {
+    setInv(r.inventory); setProposal(r.proposal); setStatus('ready'); setErr(null);
+  }, []);
   const handleError = useCallback((m: string) => { setErr(m); setStatus('error'); }, []);
 
   const isSample = inv?.meta.notes?.[0]?.startsWith('SAMPLE');
@@ -44,7 +47,7 @@ export default function App() {
           </nav>
         )}
         <div className="top-right">
-          {status === 'ready' && <FileLoader compact onLoad={handleInventory} onError={handleError} />}
+          {status === 'ready' && <FileLoader compact onLoad={handleLoad} onError={handleError} />}
           <div className="badge-readonly" title="This dashboard only reads a local snapshot.">READ-ONLY</div>
         </div>
       </header>
@@ -52,10 +55,10 @@ export default function App() {
       <main className="content">
         {status === 'loading' && <div className="loading">Loading…</div>}
         {(status === 'need-file' || status === 'error') && (
-          <FileLoader onLoad={handleInventory} onError={handleError} error={err} />
+          <FileLoader onLoad={handleLoad} onError={handleError} error={err} />
         )}
         {status === 'ready' && inv && tab === 'inventory' && <InventoryTab inv={inv} />}
-        {status === 'ready' && inv && tab === 'proposition' && <PropositionTab />}
+        {status === 'ready' && inv && tab === 'proposition' && <PropositionTab proposal={proposal} />}
       </main>
 
       {status === 'ready' && inv && (

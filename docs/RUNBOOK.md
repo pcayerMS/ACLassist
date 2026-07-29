@@ -93,13 +93,26 @@ Two figures are reported, and the distinction matters:
 
 **Nothing is applied.** This is data for the customer to approve, modify or reject.
 
+## 6. Review the proposition — dashboard Tab 2
+Reload `data/aclassist.db` in `dashboard/ACLassist.html` and open **2 · Proposition**. Because the proposal
+lives in the same database, **one file feeds both tabs**. You get KPI cards (groups today, safely removable,
+groups after the safe pass, proposed roles + how many need review), a before→after band, and three
+sub‑tables:
+- **Proposed roles** — name, access level, Azure role, scope, how many groups it replaces, folders covered,
+  and **New folders** (how many it would newly expose; `0` = no widening).
+- **Group actions** — every existing group's disposition (retire / merge / flatten / map to role / keep) with
+  the rule that produced it and a **Safety** tag.
+- **Over‑membership** — users ranked by effective group count against the threshold.
+
+All three are filterable and **exportable to Excel**, where the **Decision** column is recorded.
+
 > **Note — the AI proposition steps below are being migrated.** `Invoke-Proposition.ps1` above already
 > produces the complete factual model in the database. The steps below are the **legacy JSON path** (they
-> read the separate `data/inventory.json` / `analysis.json`) used to generate the AI proposition for Tab 2,
-> which is being rebuilt on the `.db` in v2‑P2 — see [PLAN.md](../PLAN.md). To run them today, produce the
-> JSON inventory with the legacy `engine/Invoke-Scan.ps1` first.
+> read the separate `data/inventory.json` / `analysis.json`), kept until the optional AI naming step is
+> rebuilt on the `.db` — see [PLAN.md](../PLAN.md). To run them today, produce the JSON inventory with the
+> legacy `engine/Invoke-Scan.ps1` first.
 
-## 6. Analyze the sprawl  *(M3, legacy JSON path)*
+## 7. Analyze the sprawl  *(M3, legacy JSON path)*
 ```powershell
 powershell -File ./analyzer/Invoke-Analysis.ps1
 ```

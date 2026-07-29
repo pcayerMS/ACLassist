@@ -1,21 +1,21 @@
 import { useCallback, useRef, useState } from 'react';
 import type { Inventory } from '../types';
-import { loadInventoryFromDb } from '../data';
+import { loadFromDb, type LoadResult } from '../data';
 
 interface Props {
-  onLoad: (inv: Inventory) => void;
+  onLoad: (result: LoadResult) => void;
   onError: (msg: string) => void;
   error?: string | null;
   compact?: boolean;
 }
 
-function readFile(file: File, onLoad: (inv: Inventory) => void, onError: (m: string) => void) {
+function readFile(file: File, onLoad: (r: LoadResult) => void, onError: (m: string) => void) {
   file.arrayBuffer()
     .then((buf) => {
       const bytes = new Uint8Array(buf);
       const magic = String.fromCharCode.apply(null, Array.from(bytes.slice(0, 15)));
       if (magic === 'SQLite format 3') {
-        loadInventoryFromDb(bytes).then(onLoad).catch(() => onError('Could not read that database (is it an aclassist.db?).'));
+        loadFromDb(bytes).then(onLoad).catch(() => onError('Could not read that database (is it an aclassist.db?).'));
         return;
       }
       try {
@@ -24,7 +24,7 @@ function readFile(file: File, onLoad: (inv: Inventory) => void, onError: (m: str
           onError('That file is not an aclassist database (.db) or a valid inventory.');
           return;
         }
-        onLoad(data as Inventory);
+        onLoad({ inventory: data as Inventory, proposal: null });
       } catch {
         onError('That file is not an aclassist database (.db).');
       }

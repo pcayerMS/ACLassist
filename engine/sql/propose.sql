@@ -198,20 +198,23 @@ SELECT
                     ORDER BY ag.base_dir, ag.access_level LIMIT 1), '')
   END AS target,
   CASE
-    WHEN gm.status = 'unused'  THEN 'Not on any ACL and has no members — grants nothing to anyone.'
-    WHEN gm.status = 'dormant' THEN 'On a folder ACL but no user is an effective member — a dead grant.'
+    WHEN gm.status = 'unused'  THEN 'Not on any ACL and has no members - grants nothing to anyone.'
+    WHEN gm.status = 'dormant' THEN 'On a folder ACL but no user is an effective member - a dead grant.'
     WHEN ds.survivor_group_id IS NOT NULL AND ds.survivor_group_id <> gm.group_id
-      THEN 'Grant footprint is identical to the surviving group — functionally a duplicate.'
+      THEN 'Grant footprint is identical to the surviving group - functionally a duplicate.'
     WHEN fc.group_id IS NOT NULL
-      THEN 'Pass-through only: no ACL, no direct users — it just forwards membership.'
-    ELSE 'Its grants are covered by the proposed role for this scope and access level.'
+      THEN 'Pass-through only: no ACL, no direct users - it just forwards membership.'
+    WHEN EXISTS (SELECT 1 FROM active_grants ag WHERE ag.group_id = gm.group_id)
+      THEN 'Its grants are covered by the proposed role for this scope and access level.'
+    ELSE 'No change proposed - it carries no folder grants of its own.'
   END AS reason,
   -- 1 = provably no change to anyone's effective access.
   CASE
     WHEN gm.status IN ('unused', 'dormant') THEN 1
     WHEN ds.survivor_group_id IS NOT NULL AND ds.survivor_group_id <> gm.group_id THEN 1
     WHEN fc.group_id IS NOT NULL THEN 1
-    ELSE 0
+    WHEN EXISTS (SELECT 1 FROM active_grants ag WHERE ag.group_id = gm.group_id) THEN 0
+    ELSE 1
   END AS access_safe,
   '' AS decision
 FROM group_metrics gm

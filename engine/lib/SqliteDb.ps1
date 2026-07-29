@@ -28,7 +28,19 @@ function Invoke-SqliteText {
     $cliArgs = @('-batch', '-bail')
     if ($AsJson) { $cliArgs += '-json' }
     $cliArgs += $DbPath
-    $out = $Sql | & $Sqlite @cliArgs 2>&1
+    # Windows PowerShell pipes native commands through the OEM code page, which turns every non-ASCII
+    # character into '?' in BOTH directions. SQLite is UTF-8 throughout, so force UTF-8 or accented
+    # group names, UPNs and folder names silently corrupt.
+    $utf8 = New-Object System.Text.UTF8Encoding($false)
+    $prevConsole = $null
+    try { $prevConsole = [Console]::OutputEncoding; [Console]::OutputEncoding = $utf8 } catch { $prevConsole = $null }
+    $OutputEncoding = $utf8
+    try {
+        $out = $Sql | & $Sqlite @cliArgs 2>&1
+    }
+    finally {
+        if ($prevConsole) { try { [Console]::OutputEncoding = $prevConsole } catch { } }
+    }
     if ($LASTEXITCODE -ne 0) { throw ("sqlite3 failed (exit {0}): {1}" -f $LASTEXITCODE, ($out -join "`n")) }
     return $out
 }
@@ -41,8 +53,7 @@ function New-AclDatabase {
     if ($dir -and -not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir -Force | Out-Null }
     if (Test-Path $DbPath) { Remove-Item $DbPath -Force }
     foreach ($ext in '-wal', '-shm') { $p = "$DbPath$ext"; if (Test-Path $p) { Remove-Item $p -Force } }
-    $schema = Get-Content -Path $SchemaSqlPath -Raw
-    [void](Invoke-SqliteText -Sqlite $Sqlite -DbPath $DbPath -Sql $schema)
+    Invoke-AclSqlFile -Sqlite $Sqlite -DbPath $DbPath -SqlPath $SchemaSqlPath
 }
 
 function Import-AclCsvs {
@@ -60,12 +71,21 @@ function Import-AclCsvs {
     [void](Invoke-SqliteText -Sqlite $Sqlite -DbPath $DbPath -Sql ($lines -join "`n"))
 }
 
+function Invoke-AclSqlFile {
+    # Let sqlite3 read the .sql file itself. Never round-trip SQL text through PowerShell: Get-Content
+    # would decode a BOM-free UTF-8 file as ANSI, and the native-command pipe would then map anything
+    # non-ASCII to '?'. sqlite3 reads UTF-8 natively, so this is the only lossless path.
+    [CmdletBinding()]
+    param([Parameter(Mandatory)][string]$Sqlite, [Parameter(Mandatory)][string]$DbPath, [Parameter(Mandatory)][string]$SqlPath)
+    $p = ((Resolve-Path $SqlPath).Path -replace '\\', '/')
+    [void](Invoke-SqliteText -Sqlite $Sqlite -DbPath $DbPath -Sql (".read '" + $p + "'"))
+}
+
 function Invoke-AclAnalysis {
     # Run the deterministic analysis SQL (metrics, closures, snapshot).
     [CmdletBinding()]
     param([Parameter(Mandatory)][string]$Sqlite, [Parameter(Mandatory)][string]$DbPath, [Parameter(Mandatory)][string]$AnalyzeSqlPath)
-    $sql = Get-Content -Path $AnalyzeSqlPath -Raw
-    [void](Invoke-SqliteText -Sqlite $Sqlite -DbPath $DbPath -Sql $sql)
+    Invoke-AclSqlFile -Sqlite $Sqlite -DbPath $DbPath -SqlPath $AnalyzeSqlPath
 }
 
 function Get-AclQuery {

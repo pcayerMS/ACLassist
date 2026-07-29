@@ -5,6 +5,28 @@ Mirrored in git history: https://github.com/pcayerMS/ACLassist
 
 ---
 
+## 2026-07-28 — v2-P2 (part 2): Tab 2 reads the proposition from the database
+- **One file, both tabs.** `data.ts` now opens `aclassist.db` once and returns *both* the inventory and the
+  proposition, so loading the single `.db` populates Tab 1 **and** Tab 2. The separate
+  `recommendations.json` loader is gone. If the database has no proposal tables yet, Tab 2 explains how to
+  create them instead of failing.
+- **Tab 2 rebuilt** on `proposed_roles` / `proposed_group_actions` / `proposed_user_flags` /
+  `proposal_summary`: KPI cards, a three‑stage before→after band (today → after access‑safe → after full
+  consolidation), and three filterable, Excel‑exportable sub‑tables. Every row carries a **Safety** tag, and
+  roles show **New folders** — exactly how many folders they would newly expose.
+- **FIXED (data corruption) — non-ASCII was destroyed end to end.** Windows PowerShell reads BOM‑less UTF‑8
+  as ANSI and pipes native commands through the OEM code page, so every non‑ASCII character became `?` —
+  confirmed by `hex()` showing `3F3F3F` stored in the database. **This would have corrupted accented group
+  names, UPNs and folder names**, which is a certainty in a bilingual tenant. Fixed by letting sqlite3 read
+  `.sql` files itself (`.read`, new `Invoke-AclSqlFile`) instead of round‑tripping SQL text through
+  PowerShell, and by forcing UTF‑8 on the query read‑back path. Verified: the em dash now stores as
+  `E28094` and returns as U+2014. Engine console strings are kept ASCII‑only for the same reason.
+- **FIXED** — groups with action `keep` were reported as needing review with a misleading reason; leaving a
+  group untouched changes nobody's access, so they are now correctly `access_safe`.
+- **Invariants re-verified** after the changes: every group has exactly one action, no dormant group is
+  mapped to a role, `access_safe` roles widen nothing, flagged roles genuinely widen, `keep` is always safe,
+  and no retire action drops a group that still has effective users.
+
 ## 2026-07-28 — v2-P2 (part 1): deterministic proposition engine
 - **`engine/sql/propose.sql` + `engine/Invoke-Proposition.ps1`** — the proposition now runs **inside the
   database**, offline, with **no Azure and no AI**. All five levers are implemented as reproducible SQL:

@@ -16,8 +16,11 @@ simplified, RBAC‑style model. Ships as a git repo you clone, point at a target
 - **Tab 1 — Inventory:** loads `aclassist.db` and renders the real ACL/permission structure as filterable,
   sortable, Excel‑exportable tables (Groups, Folders, Users, Group nesting, Memberships, Storage roles (RBAC)) with
   clickable KPI cards that jump straight to the relevant pre‑filtered view.
-- **Tab 2 — Proposition:** AI‑generated, fully user‑editable recommendations to consolidate the sprawl
-  into an RBAC‑style model, with a before→after map. You approve/modify/reject everything.
+- **Tab 2 — Proposition:** the consolidation model, read from the same `aclassist.db`. Shows an
+  **access‑safe** reduction (provably no user gains or loses access) separately from a **full
+  consolidation** where anything that would widen access is flagged with exactly how many folders it would
+  newly expose. Sub‑tabs for proposed roles, per‑group actions, and over‑membership users — all filterable
+  and Excel‑exportable. You approve/modify/reject everything; nothing is ever applied.
 
 ## Prerequisites
 - **Windows PowerShell 5.1** (built into Windows) or PowerShell 7 — for the scan engine.
@@ -72,9 +75,9 @@ powershell -File ./engine/Build-SampleDb.ps1     # → data/aclassist.db (no Azu
 
 Then open `dashboard/ACLassist.html` and load `data/aclassist.db`.
 
-> **Tab 2** currently renders the legacy `recommendations.json`. The new DB‑native proposition
-> (`engine/Invoke-Proposition.ps1`) is built and validated; wiring Tab 2 to it, plus the optional AI naming
-> step, is the rest of v2‑P2 — see [PLAN.md](PLAN.md).
+> **One file, both tabs.** The proposition is written into `data/aclassist.db` itself, so loading that
+> single file in the dashboard populates Tab 1 and Tab 2 together. Optional AI naming (friendly role names
+> and rationale only — never numbers) is the remaining piece of v2‑P2; see [PLAN.md](PLAN.md).
 
 See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the full procedure and [PLAN.md](PLAN.md) for the design.
 
